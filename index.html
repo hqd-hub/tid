@@ -118,7 +118,7 @@ details summary{cursor:pointer;color:var(--accent);font-weight:600;padding:6px 0
 
 <script>
 'use strict';
-const VERSION = '1.1.0';
+const VERSION = '1.2.0';
 const ITER = 310000;               // PBKDF2 iterations for the backup key
 const BK_NAME = 'Tid-backup.tid';  // file name in Google Drive
 const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file'; // only files this app created
@@ -183,41 +183,168 @@ const fmtShort = s => parse(s).toLocaleDateString('da-DK', { day: 'numeric', mon
 const fmtTime = t => new Date(t).toLocaleString('da-DK', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 const wkNum = wk => Number(wk.split('-W')[1]);
 
-/* ---------------- Conversation library (append only: ids follow order) ---------------- */
-const mk = (prefix, type, who) => (list) => list.map(([age, text], i) => ({ id: prefix + (i + 1), type, for: who, age, text }));
+/* ---------------- Conversation library (append only: ids follow order) ----------------
+   Partner starters: [depth, theme, text]  depth 1 = let, 2 = mellem, 3 = dyb
+   Child starters:   [minAge, depth, text]  depth 1 = sjov, 2 = tænke (never heavy)
+   Inspired by: Gottman (love maps, fondness & admiration, stress-reducing conversation, rituals & shared meaning,
+   emotion coaching), Aron et al. 1997 (gradually deeper self-disclosure), Sue Johnson (A.R.E.), Esther Perel
+   (curiosity, novelty) and research on open-ended questions with 3–6-year-olds. All questions are original. */
+const THEMES = { kort: 'Kærlighedskort', beundring: 'Beundring', hverdag: 'Hverdag', drømme: 'Drømme', os: 'Os to', leg: 'Nysgerrighed', mening: 'Fælles mening', forældre: 'Forældre' };
+const DEPTH = { partner: { 1: 'Let', 2: 'Mellem', 3: 'Dyb' }, child: { 1: 'Sjov', 2: 'Tænke' } };
+const TIPS = {
+  partner: {
+    1: 'Bare hyg jer. Spørg videre med "hvorfor lige det?" – det er ofte dér, det bliver interessant.',
+    2: 'Stil åbne spørgsmål og husk svarene. Gottman kalder det at holde sit "kærlighedskort" opdateret – par, der kender hinandens indre verden, står stærkere, når livet bliver travlt.',
+    3: 'Vælg et roligt tidspunkt uden telefoner. Lyt for at forstå, ikke for at løse. Del selv noget bagefter – nærhed vokser, når åbenheden går begge veje.'
+  },
+  child: {
+    1: 'Del gerne dit eget svar først – så er det lettere for barnet at byde ind.',
+    2: 'Sæt ord på følelsen ("det lyder, som om du blev skuffet"). Ingen forhør – et kort svar er helt fint.',
+    small: 'Til de mindste: hold det konkret og her-og-nu. Et valg mellem to ting virker godt.'
+  }
+};
+const mkC = (list) => list.map(([age, depth, text], i) => ({ id: 'ks' + (i + 1), type: 'starter', for: 'child', age, depth, text }));
+const mkP = (list) => list.map(([depth, theme, text], i) => ({ id: 'ps' + (i + 1), type: 'starter', for: 'partner', age: 0, depth, theme, text }));
+const mkCh = (prefix, who) => (list) => list.map(([age, text], i) => ({ id: prefix + (i + 1), type: 'challenge', for: who, age, text }));
 const IDEAS = [
-  ...mk('ks', 'starter', 'child')([
-    [3, 'Hvad var det sjoveste, du lavede i dag?'], [3, 'Hvem legede du med i dag?'], [3, 'Hvis du var et dyr, hvilket dyr ville du så være?'],
-    [3, 'Hvad skal vi lave i weekenden, hvis du må bestemme?'], [3, 'Hvad gjorde dig glad i dag?'], [3, 'Var der noget, der var svært i dag?'],
-    [3, 'Hvad drømte du om i nat?'], [3, 'Hvis du kunne flyve, hvor ville du så flyve hen?'], [3, 'Hvad er din yndlingsfarve lige nu – og hvorfor?'],
-    [3, 'Hvis vi fik et kæledyr, hvad skulle det så hedde?'], [3, 'Hvem var sød ved dig i dag?'], [3, 'Hvad var dagens bedste mad?'],
-    [3, 'Hvis dit legetøj kunne tale, hvad ville det så sige om dig?'], [3, 'Hvad skal vi synge, når vi putter i aften?'],
-    [5, 'Hvad var dagens højdepunkt – og dagens lavpunkt?'], [5, 'Lærte du noget nyt i dag, som jeg ikke ved?'],
-    [5, 'Hvis du var lærer i en dag, hvad skulle klassen så lave?'], [5, 'Hvad er du blevet bedre til i år?'],
-    [5, 'Hvis du kunne bytte plads med mig i en dag, hvad ville du så gøre?'], [5, 'Hvad er det modigste, du nogensinde har gjort?'],
-    [5, 'Er der nogen i din klasse, der godt kunne bruge en ven?'], [5, 'Hvis du kunne lave en ny regel derhjemme, hvad skulle den så være?'],
-    [5, 'Hvad tror du, jeg lavede på arbejdet i dag?'], [5, 'Hvilken superkraft ville du gerne have – og hvad ville du bruge den til?'],
-    [5, 'Hvad gør du, når du bliver sur – og hvad hjælper dig?'], [5, 'Hvis vi lavede en film om vores familie, hvad skulle den så hedde?'],
-    [5, 'Hvad er det sjoveste, vi nogensinde har lavet sammen?'], [5, 'Hvad glæder du dig mest til lige nu?'],
-    [5, 'Hvad skulle der stå i en bog om dig?'], [5, 'Hvis du fik 100 kroner, hvad ville du så gøre med dem?'],
-    [5, 'Hvem er den sjoveste i familien – og hvorfor?'], [5, 'Hvad vil du gerne have, at vi to laver mere af?']
+  ...mkC([
+    [3, 1, 'Hvad var det sjoveste, du lavede i dag?'], [3, 1, 'Hvem legede du med i dag?'], [3, 1, 'Hvis du var et dyr, hvilket dyr ville du så være?'],
+    [3, 1, 'Hvad skal vi lave i weekenden, hvis du må bestemme?'], [3, 2, 'Hvad gjorde dig glad i dag?'], [3, 2, 'Var der noget, der var svært i dag?'],
+    [3, 1, 'Hvad drømte du om i nat?'], [3, 1, 'Hvis du kunne flyve, hvor ville du så flyve hen?'], [3, 1, 'Hvad er din yndlingsfarve lige nu – og hvorfor?'],
+    [3, 1, 'Hvis vi fik et kæledyr, hvad skulle det så hedde?'], [3, 2, 'Hvem var sød ved dig i dag?'], [3, 1, 'Hvad var dagens bedste mad?'],
+    [3, 1, 'Hvis dit legetøj kunne tale, hvad ville det så sige om dig?'], [3, 1, 'Hvad skal vi synge, når vi putter i aften?'],
+    [5, 2, 'Hvad var dagens højdepunkt – og dagens lavpunkt?'], [5, 1, 'Lærte du noget nyt i dag, som jeg ikke ved?'],
+    [5, 1, 'Hvis du var lærer i en dag, hvad skulle klassen så lave?'], [5, 2, 'Hvad er du blevet bedre til i år?'],
+    [5, 1, 'Hvis du kunne bytte plads med mig i en dag, hvad ville du så gøre?'], [5, 2, 'Hvad er det modigste, du nogensinde har gjort?'],
+    [5, 2, 'Er der nogen i din klasse, der godt kunne bruge en ven?'], [5, 1, 'Hvis du kunne lave en ny regel derhjemme, hvad skulle den så være?'],
+    [5, 1, 'Hvad tror du, jeg lavede på arbejdet i dag?'], [5, 1, 'Hvilken superkraft ville du gerne have – og hvad ville du bruge den til?'],
+    [5, 2, 'Hvad gør du, når du bliver sur – og hvad hjælper dig?'], [5, 1, 'Hvis vi lavede en film om vores familie, hvad skulle den så hedde?'],
+    [5, 1, 'Hvad er det sjoveste, vi nogensinde har lavet sammen?'], [5, 1, 'Hvad glæder du dig mest til lige nu?'],
+    [5, 1, 'Hvad skulle der stå i en bog om dig?'], [5, 1, 'Hvis du fik 100 kroner, hvad ville du så gøre med dem?'],
+    [5, 1, 'Hvem er den sjoveste i familien – og hvorfor?'], [5, 2, 'Hvad vil du gerne have, at vi to laver mere af?'],
+    // 3+ sjov
+    [3, 1, 'Hvad legede du med i børnehaven i dag?'], [3, 1, 'Hvad spiste du til frokost i dag?'], [3, 1, 'Vil du helst være en løve eller en fugl?'],
+    [3, 1, 'Hvad skal din bamse lave i nat?'], [3, 1, 'Hvilken farve skulle vores hoveddør have, hvis du bestemte?'], [3, 1, 'Hvad tror du, en hund drømmer om?'],
+    [3, 1, 'Hvis du var en lille mus, hvor ville du så bo i vores hus?'], [3, 1, 'Hvad er det sjoveste ved at være i bad?'],
+    [3, 1, 'Hvilken lyd laver en dinosaur, når den er glad?'], [3, 1, 'Hvad skal vi bygge i weekenden?'], [3, 1, 'Hvem vil du gerne lege med i morgen?'],
+    [3, 1, 'Hvad var det største, du så i dag?'], [3, 1, 'Vil du helst spise pandekager eller is hele ugen?'],
+    [3, 1, 'Hvis du kunne tale med dyr, hvad ville du så spørge en elefant om?'], [3, 1, 'Hvad ligner den sky dér?'],
+    [3, 1, 'Hvad var bedst i dag: morgenen, middagen eller aftenen?'], [3, 1, 'Hvilken sang synger I i børnehaven?'],
+    [3, 1, 'Hvad skal vi lege, når vi kommer hjem?'], [3, 1, 'Hvis du var mor eller far i en dag, hvad skulle vi så have til aftensmad?'],
+    [3, 1, 'Hvad er det sjoveste, man kan lave, når det regner?'],
+    // 3+ tænke
+    [3, 2, 'Hvad kan man gøre, når en ven er ked af det?'], [3, 2, 'Blev du lidt sur i dag? Hvad skete der?'], [3, 2, 'Hvad var du god til i dag?'],
+    [3, 2, 'Hvem hjalp du i dag?'], [3, 2, 'Hvad gør dig tryg, når det er mørkt?'], [3, 2, 'Hvordan ser dit ansigt ud, når du er glad? Og når du er sur?'],
+    [3, 2, 'Hvad er det bedste ved at have en søskende?'], [3, 2, 'Hvem savner du, når du er i børnehave?'],
+    [3, 2, 'Hvad hjælper dig, når du er ked af det?'], [3, 2, 'Var der noget, du var lidt bange for i dag?'],
+    // 5+ sjov
+    [5, 1, 'Hvad legede I i frikvarteret?'], [5, 1, 'Hvad er det mærkeligste, du har set i denne uge?'],
+    [5, 1, 'Hvis du kunne designe en ny legeplads, hvad skulle den så have?'], [5, 1, 'Hvis vores hus var et rumskib, hvor skulle vi så flyve hen?'],
+    [5, 1, 'Hvilket dyr ville være den bedste lærer – og hvorfor?'], [5, 1, 'Hvis du skulle opfinde en ny is-smag, hvad skulle den så være?'],
+    [5, 1, 'Hvad er den sjoveste joke, du kender?'], [5, 1, 'Hvis du var usynlig i en dag, hvad ville du så lave?'],
+    [5, 1, 'Vil du helst kunne flyve eller kunne trække vejret under vand?'], [5, 1, 'Hvem er din største helt lige nu – og hvorfor?'],
+    [5, 1, 'Hvis du skulle opfinde en ny sport, hvordan skulle den så spilles?'], [5, 1, 'Hvad skal vi lave på din næste fødselsdag?'],
+    [5, 1, 'Hvad var det bedste, du lavede til fodbold eller gymnastik i denne uge?'], [5, 1, 'Hvad tror du, der er inde i en vulkan?'],
+    [5, 1, 'Hvis du kunne lave én ting om på skolen, hvad skulle det så være?'], [5, 1, 'Hvad er det første, du vil gøre, når du bliver voksen?'],
+    [5, 1, 'Hvis vi fik en robot, hvad skulle den så hjælpe med derhjemme?'], [5, 1, 'Hvilken bog eller film skal vi læse eller se sammen igen?'],
+    [5, 1, 'Hvad tror du, din lærer laver, når hun eller han har fri?'], [5, 1, 'Hvis du kunne tage hele klassen med på tur, hvor skulle I så hen?'],
+    // 5+ tænke
+    [5, 2, 'Hvem var god ved dig i dag – og hvad gjorde de?'], [5, 2, 'Var der noget svært i dag, som du klarede alligevel?'],
+    [5, 2, 'Har du hjulpet nogen i dag?'], [5, 2, 'Hvad gør en god ven?'], [5, 2, 'Hvornår følte du dig stolt i denne uge?'],
+    [5, 2, 'Var der noget, der gjorde dig lidt ked af det i dag?'], [5, 2, 'Hvad gør du, når du er bange – og hvad hjælper?'],
+    [5, 2, 'Hvordan kan man se på nogen, at de er glade? Eller kede af det?'], [5, 2, 'Hvad vil du gerne blive bedre til?'],
+    [5, 2, 'Hvis en ny i klassen ikke havde nogen at lege med, hvad kunne du så gøre?'], [5, 2, 'Hvad er det bedste ved vores familie?'],
+    [5, 2, 'Hvad kan vi gøre, når vi er uenige derhjemme?'], [5, 2, 'Hvad er du glad for i dag?'],
+    [5, 2, 'Hvad tænker du på, når du skal sove?'], [5, 2, 'Hvad synes du, jeg skal blive bedre til som far?']
   ]),
-  ...mk('ps', 'starter', 'partner')([
-    [0, 'Hvad har fyldt mest for dig i denne uge?'], [0, 'Hvad var dagens bedste øjeblik for dig?'],
-    [0, 'Er der noget, du gerne vil have mere af fra mig lige nu?'], [0, 'Hvad glæder du dig til i den kommende måned?'],
-    [0, 'Hvornår følte du dig sidst rigtig set af mig?'], [0, 'Hvad savner du fra tiden før børnene?'],
-    [0, 'Hvad er en drøm, du ikke har sagt højt i et stykke tid?'], [0, 'Hvis vi havde en hel dag kun for os to, hvad skulle vi så lave?'],
-    [0, 'Hvad er du stolt af, at du har klaret for nylig?'], [0, 'Hvad tror du, børnene vil huske fra den her tid?'],
-    [0, 'Hvilket minde om os to tænker du tit på?'], [0, 'Hvad stresser dig mest lige nu – og kan jeg tage noget af det?'],
-    [0, 'Hvad har overrasket dig mest ved at være forælder?'], [0, 'Hvor vil du gerne være om fem år?'],
-    [0, 'Hvad gør jeg, som du sætter pris på, men sjældent siger?'], [0, 'Hvis pengene ikke betød noget, hvor skulle vores næste rejse så gå hen?'],
-    [0, 'Hvad har du lyst til at lære eller prøve næste år?'], [0, 'Hvordan har du det – helt ærligt?'],
-    [0, 'Hvad var det første, du lagde mærke til ved mig?'], [0, 'Hvilken tradition vil du gerne starte i vores familie?'],
-    [0, 'Er der noget, vi skal sige nej til, så vi får mere tid sammen?'], [0, 'Hvad giver dig energi lige nu – og hvad dræner dig?'],
-    [0, 'Hvad vil du gerne, at vi gør anderledes end vores egne forældre?'], [0, 'Hvilken sang minder dig om os?'],
-    [0, 'Hvad er det bedste råd, du nogensinde har fået?']
+  ...mkP([
+    [2, 'hverdag', 'Hvad har fyldt mest for dig i denne uge?'], [1, 'hverdag', 'Hvad var dagens bedste øjeblik for dig?'],
+    [3, 'os', 'Er der noget, du gerne vil have mere af fra mig lige nu?'], [1, 'drømme', 'Hvad glæder du dig til i den kommende måned?'],
+    [3, 'os', 'Hvornår følte du dig sidst rigtig set af mig?'], [2, 'os', 'Hvad savner du fra tiden før børnene?'],
+    [3, 'drømme', 'Hvad er en drøm, du ikke har sagt højt i et stykke tid?'], [1, 'leg', 'Hvis vi havde en hel dag kun for os to, hvad skulle vi så lave?'],
+    [2, 'beundring', 'Hvad er du stolt af, at du har klaret for nylig?'], [2, 'forældre', 'Hvad tror du, børnene vil huske fra den her tid?'],
+    [2, 'os', 'Hvilket minde om os to tænker du tit på?'], [2, 'hverdag', 'Hvad stresser dig mest lige nu – og kan jeg tage noget af det?'],
+    [2, 'forældre', 'Hvad har overrasket dig mest ved at være forælder?'], [2, 'drømme', 'Hvor vil du gerne være om fem år?'],
+    [2, 'beundring', 'Hvad gør jeg, som du sætter pris på, men sjældent siger?'], [1, 'leg', 'Hvis pengene ikke betød noget, hvor skulle vores næste rejse så gå hen?'],
+    [1, 'drømme', 'Hvad har du lyst til at lære eller prøve næste år?'], [3, 'hverdag', 'Hvordan har du det – helt ærligt?'],
+    [1, 'os', 'Hvad var det første, du lagde mærke til ved mig?'], [2, 'mening', 'Hvilken tradition vil du gerne starte i vores familie?'],
+    [2, 'mening', 'Er der noget, vi skal sige nej til, så vi får mere tid sammen?'], [2, 'hverdag', 'Hvad giver dig energi lige nu – og hvad dræner dig?'],
+    [3, 'forældre', 'Hvad vil du gerne, at vi gør anderledes end vores egne forældre?'], [1, 'leg', 'Hvilken sang minder dig om os?'],
+    [2, 'kort', 'Hvad er det bedste råd, du nogensinde har fået?'],
+    // Let
+    [1, 'leg', 'Hvis vi kunne bo i en anden by i et år, hvilken skulle det så være?'], [1, 'os', 'Hvad er den bedste ferie, vi har haft – og hvad gjorde den så god?'],
+    [1, 'leg', 'Hvilken ret kunne du spise hver uge uden at blive træt af den?'], [1, 'hverdag', 'Hvis du fik en fri eftermiddag i morgen, hvad ville du så bruge den på?'],
+    [1, 'leg', 'Hvilken film eller serie har du lyst til, at vi ser sammen?'], [1, 'kort', 'Hvad var din yndlingsleg, da du var barn?'],
+    [1, 'kort', 'Hvem var din bedste ven, da du var ti år?'], [1, 'kort', 'Hvad var dit første job – og hvad lærte du af det?'],
+    [1, 'leg', 'Hvis du kunne få et nyt talent på en nat, hvilket skulle det så være?'], [1, 'hverdag', 'Hvad har fået dig til at grine i denne uge?'],
+    [1, 'hverdag', 'Hvad er det bedste, der er sket for dig i dag – også selvom det var lille?'], [1, 'kort', 'Hvilken lugt minder dig om din barndom?'],
+    [1, 'leg', 'Hvilket sted i Danmark vil du gerne vise mig, som jeg ikke har set?'], [1, 'drømme', 'Hvad ville du lave, hvis du havde en ekstra time hver dag?'],
+    [1, 'leg', 'Hvis vi skulle starte en lille forretning sammen, hvad skulle den så være?'], [1, 'kort', 'Hvad var du helt vild med som teenager?'],
+    [1, 'leg', 'Hvilken koncert eller oplevelse vil du allerhelst have igen?'], [1, 'os', 'Hvad er dit yndlingsminde fra vores første år sammen?'],
+    [1, 'leg', 'Hvilken årstid er du mest dig selv i?'], [1, 'hverdag', 'Hvad har du læst, hørt eller set for nylig, som satte gang i tankerne?'],
+    [1, 'leg', 'Hvis du kunne tale et nyt sprog flydende med det samme, hvilket skulle det så være?'], [1, 'kort', 'Hvad er den bedste gave, du nogensinde har fået?'],
+    [1, 'leg', 'Hvad skal en helt perfekt søndag indeholde for dig?'], [1, 'os', 'Hvilken lille vane hos mig synes du er sød, selvom den er lidt mærkelig?'],
+    [1, 'leg', 'Hvis vi fik en weekend uden børn om fjorten dage, hvad skulle vi så?'], [1, 'kort', 'Hvem i din familie ligner du mest – og på hvilken måde?'],
+    [1, 'forældre', 'Hvad er det sjoveste, børnene har sagt for nylig?'], [1, 'forældre', 'Hvad har du lagt mærke til ved børnene i denne uge?'],
+    [1, 'leg', 'Hvad ville du købe, hvis det kun måtte gøre dig glad og slet ikke være praktisk?'], [1, 'hverdag', 'Hvad glæder du dig mest til i weekenden?'],
+    [1, 'mening', 'Hvis vores familie skulle have et motto, hvad skulle det så være?'], [1, 'kort', 'Hvad er din yndlingsbog – og hvorfor?'],
+    [1, 'leg', 'Hvilken hobby ville du begynde på, hvis tid ikke var et problem?'], [1, 'os', 'Hvad er det sjoveste, vi har oplevet sammen?'],
+    [1, 'leg', 'Hvis vi skulle lave mad fra et nyt land hver måned, hvor skulle vi så starte?'], [1, 'kort', 'Hvad gjorde din familie altid til jul, da du var lille?'],
+    [1, 'hverdag', 'Hvem har du haft en god snak med for nylig?'], [1, 'leg', 'Hvad er det mest spontane, du nogensinde har gjort?'],
+    [1, 'leg', 'Hvilket sted får dig til at slappe helt af?'], [1, 'os', 'Hvilken sang skal vi danse til i køkkenet, hvis vi gør det nu?'],
+    [1, 'drømme', 'Hvad er næste punkt på din "en dag vil jeg"-liste?'], [1, 'kort', 'Hvad var du bange for som barn, som du griner af i dag?'],
+    [1, 'leg', 'Hvilket årti ville du gerne have været ung i?'], [1, 'hverdag', 'Hvad skal vi spise på fredag, hvis det skal føles som en fest?'],
+    [1, 'leg', 'Hvis vi tog en fridag sammen midt i ugen, hvad skulle vi så lave?'],
+    // Mellem
+    [2, 'kort', 'Hvad fylder mest for dig på arbejdet lige nu?'], [2, 'kort', 'Hvem er de vigtigste mennesker i dit liv lige nu – ud over os?'],
+    [2, 'kort', 'Hvad har du ændret mening om de seneste år?'], [2, 'hverdag', 'Hvad kunne gøre den kommende uge lettere for dig?'],
+    [2, 'hverdag', 'Er der noget, der fylder i dit hoved, som du ikke har nævnt endnu?'], [2, 'hverdag', 'Hvis du kunne slippe for én opgave i næste uge, hvilken skulle det så være?'],
+    [2, 'beundring', 'Hvornår har du sidst været stolt af os som familie?'], [2, 'beundring', 'Hvad tror du, dine venner beundrer mest ved dig?'],
+    [2, 'beundring', 'Hvornår har du set mig med nye øjne?'], [2, 'os', 'Hvordan synes du, vi deler opgaverne derhjemme – hvad fungerer, og hvad gør ikke?'],
+    [2, 'drømme', 'Hvad vil du gerne nå, før du fylder 50?'], [2, 'drømme', 'Hvis du kunne skifte karriere uden risiko, hvad ville du så lave?'],
+    [2, 'drømme', 'Hvordan ser et rigtig godt år ud for dig, hvis vi kigger et år frem?'], [2, 'drømme', 'Hvilken oplevelse vil du gerne give børnene, før de bliver store?'],
+    [2, 'forældre', 'Hvad har du lært om dig selv, efter du blev mor?'], [2, 'forældre', 'Hvad fra din egen barndom vil du gerne give videre til børnene?'],
+    [2, 'forældre', 'Hvornår føler du, at vi er et godt team som forældre?'], [2, 'forældre', 'Hvad bekymrer dig mest for børnene lige nu – hvis noget?'],
+    [2, 'forældre', 'Hvilke værdier håber du, børnene tager med sig hjemmefra?'], [2, 'os', 'Hvad er vi allerbedst til sammen?'],
+    [2, 'os', 'Hvornår har du sidst følt dig rigtig tæt på mig?'], [2, 'os', 'Hvad skal der til, for at du føler dig hørt af mig?'],
+    [2, 'os', 'Hvilken af vores vaner som par vil du gerne beholde for altid?'], [2, 'os', 'Hvis du skulle beskrive os to med tre ord lige nu, hvilke ville du så vælge?'],
+    [2, 'mening', 'Hvad betyder "hjem" for dig?'], [2, 'mening', 'Hvilke af vores små ritualer holder du af – og hvilke savner du?'],
+    [2, 'mening', 'Hvordan kunne vi fejre de små sejre i hverdagen?'], [2, 'mening', 'Hvad vil du gerne, at børnene siger om vores familie, når de er voksne?'],
+    [2, 'mening', 'Hvordan vil du helst bruge vores weekender de næste par år?'], [2, 'leg', 'Hvornår har du sidst følt dig rigtig levende?'],
+    [2, 'leg', 'Hvad vil du gerne prøve sammen med mig, som ingen af os har prøvet før?'], [2, 'leg', 'Hvilken side af dig selv får for lidt plads i hverdagen?'],
+    [2, 'leg', 'Hvornår synes du, jeg er allermest mig selv?'], [2, 'kort', 'Hvem har betydet mest for, hvem du er i dag?'],
+    [2, 'kort', 'Hvad var et vendepunkt i dit liv, før vi mødtes?'], [2, 'kort', 'Hvad gør dig virkelig glad, som jeg måske ikke ved?'],
+    [2, 'kort', 'Hvad har du mest brug for efter en hård dag – snak, ro eller noget helt tredje?'], [2, 'hverdag', 'Hvad kunne jeg gøre i morgen, som ville gøre din dag bedre?'],
+    [2, 'beundring', 'Hvilken af dine egne egenskaber er du gladest for?'], [2, 'drømme', 'Hvad drømte du om at blive som barn – og er der noget af det tilbage i dig?'],
+    [2, 'os', 'Hvad synes du, vi er blevet bedre til, siden vi fik børn?'], [2, 'os', 'Hvordan kan jeg bedst vise, at jeg tænker på dig i løbet af dagen?'],
+    [2, 'mening', 'Hvad er vigtigst for dig lige nu: tid, oplevelser eller tryghed?'], [2, 'kort', 'Hvad har dine forældre lært dig, som du er taknemmelig for?'],
+    [2, 'leg', 'Hvis dit liv var en bog, hvad skulle det næste kapitel så hedde?'], [2, 'forældre', 'Hvad gør jeg godt som far – og hvad kunne jeg gøre mere af?'],
+    [2, 'mening', 'Hvordan vil du helst, at vi siger godmorgen og godnat til hinanden?'], [2, 'drømme', 'Er der en drøm, du har lagt på hylden, som du gerne vil tage frem igen?'],
+    // Dyb
+    [3, 'os', 'Har der været en gang, hvor du havde brug for mig, men ikke fik det sagt?'], [3, 'os', 'Hvad har du brug for fra mig, når du er ked af det?'],
+    [3, 'os', 'Hvornår føler du dig mest tryg ved os?'], [3, 'os', 'Er der noget, jeg har sagt eller gjort, som stadig sidder i dig?'],
+    [3, 'os', 'Hvad er du bange for kunne ske med os, hvis vi ikke passer på?'], [3, 'os', 'Hvornår kan du mærke, at jeg er der for dig – og hvornår kan du ikke?'],
+    [3, 'os', 'Hvad kunne jeg gøre, så du føler dig mere set i hverdagen?'], [3, 'os', 'Har du følt dig alene, selvom vi var sammen? Hvornår?'],
+    [3, 'os', 'Hvad fik dig til at vælge mig – og gælder det stadig?'], [3, 'kort', 'Er der et svært minde fra din barndom, du har lyst til at fortælle om?'],
+    [3, 'kort', 'Hvilken oplevelse har formet dig mest – på godt og ondt?'], [3, 'kort', 'Hvad er du mest i tvivl om i dit liv lige nu?'],
+    [3, 'kort', 'Hvad er du dybest set mest taknemmelig for?'], [3, 'kort', 'Hvad har du svært ved at bede om hjælp til?'],
+    [3, 'kort', 'Hvad er der i dig, som du tror, kun få mennesker kender?'], [3, 'kort', 'Hvordan har du forandret dig de sidste fem år – og hvad tænker du om det?'],
+    [3, 'drømme', 'Hvis du kun havde ét år tilbage, hvad ville du så ændre?'], [3, 'drømme', 'Hvad vil du gerne, at folk husker dig for?'],
+    [3, 'drømme', 'Hvad er din største drøm for os to om ti år?'], [3, 'drømme', 'Hvad har du givet afkald på for vores familie – og savner du det?'],
+    [3, 'forældre', 'Hvad har været svært ved at blive forælder, som du sjældent siger højt?'], [3, 'forældre', 'Er der et mønster fra din egen opvækst, du er bange for at gentage?'],
+    [3, 'forældre', 'Hvad har det at blive mor gjort ved den måde, du ser dig selv på?'], [3, 'mening', 'Hvad giver dit liv mening lige nu?'],
+    [3, 'mening', 'Hvad er det allervigtigste i livet for dig – når alt det travle er skrællet væk?'], [3, 'mening', 'Hvad betyder det for dig, at vi har valgt hinanden?'],
+    [3, 'mening', 'Hvordan vil du gerne, at vi har det med hinanden, når børnene er flyttet hjemmefra?'], [3, 'beundring', 'Hvad har jeg gjort, der har betydet mere for dig, end jeg aner?'],
+    [3, 'beundring', 'Hvornår har du været mest stolt af mig?'], [3, 'beundring', 'Hvad ser du i mig, som jeg har svært ved at se selv?'],
+    [3, 'hverdag', 'Hvad er det tungeste, du bærer på lige nu?'], [3, 'hverdag', 'Hvad har du brug for, som du ikke får lige nu – fra mig eller fra livet?'],
+    [3, 'os', 'Hvilken uenighed mellem os bliver ved med at dukke op – og hvad tror du, den egentlig handler om?'], [3, 'os', 'Hvad ville du ønske, at jeg spurgte dig mere om?'],
+    [3, 'os', 'Hvordan har det været for dig, når du har tilgivet mig noget?'], [3, 'os', 'Hvad har vi klaret sammen, som du er stolt af?'],
+    [3, 'leg', 'Hvornår føler du dig mest tiltrukket af mig?'], [3, 'leg', 'Hvad ved mig overrasker dig stadig?'],
+    [3, 'leg', 'Hvad har du lyst til at udforske i dit liv, som du endnu ikke har turdet?'], [3, 'kort', 'Hvad er du mest bange for at miste?'],
+    [3, 'kort', 'Hvordan har du det med at blive ældre?'], [3, 'mening', 'Hvis vores familie har en kerne, hvad er den så?'],
+    [3, 'forældre', 'Hvad håber du, børnene aldrig skal opleve, som du selv har oplevet?'], [3, 'drømme', 'Hvilken version af dig selv vil du gerne være om ti år?']
   ]),
-  ...mk('kc', 'challenge', 'child')([
+  ...mkCh('kc', 'child')([
     [3, '10 minutter, hvor barnet bestemmer legen – telefonen i et andet rum.'], [3, 'Byg en hule sammen af puder og tæpper.'],
     [3, 'Lav aftensmaden sammen – barnet vælger én ting til maden.'], [3, 'Gå på opdagelse i nabolaget og find fem ting, I aldrig har lagt mærke til.'],
     [3, 'Læs en ekstra godnathistorie – og lad barnet finde på slutningen.'], [3, 'Dans til tre sange i stuen.'],
@@ -228,7 +355,7 @@ const IDEAS = [
     [5, 'Lav en tidskapsel med tre ting fra i år.'], [5, 'Spørg "Hvad vil du gerne have, at vi laver sammen?" – og gør det inden søndag.'],
     [5, 'Gå- eller cykeltur, hvor barnet er guide og bestemmer ruten.'], [5, 'Fortæl en historie fra dengang du var på samme alder.']
   ]),
-  ...mk('pc', 'challenge', 'partner')([
+  ...mkCh('pc', 'partner')([
     [0, 'Sig tre konkrete ting, du sætter pris på ved hende – i dag.'], [0, '20 minutter uden telefoner, når børnene er lagt i seng.'],
     [0, 'Planlæg en date og stå for det hele – pasning inklusive.'], [0, 'Overtag en af hendes faste opgaver i denne uge uden at gøre noget nummer ud af det.'],
     [0, 'Skriv en håndskrevet seddel og læg den, hvor hun finder den.'], [0, 'Gå en tur sammen – kun jer to.'],
@@ -242,7 +369,7 @@ const IDEAS = [
 
 /* ---------------- State ---------------- */
 const S = { tab: 'today', people: [], cats: [], moments: [], reviews: [], weekOffset: 0, unlocked: false, pending: [], backupPending: false, keyMem: null,
-  ideas: { fav: [], used: {}, custom: [], week: {} }, snakPerson: null, snakCur: {} };
+  ideas: { fav: [], used: {}, custom: [], week: {} }, snakPerson: null, snakCur: {}, snakDepth: { partner: 0, child: 0 } };
 const person = id => S.people.find(p => p.id === id);
 const catOf = id => S.cats.find(c => c.id === id);
 const reviewOf = wk => S.reviews.find(r => r.isoWeek === wk);
@@ -269,17 +396,23 @@ function fits(i, p) {
   const age = ageOf(p);
   return !(p.kind === 'child' && age !== null && (i.age || 0) > age);
 }
-const pool = (p, type) => allIdeas().filter(i => i.type === type && fits(i, p));
+const kindOf = p => p.kind === 'partner' ? 'partner' : 'child';
+const pool = (p, type, depth) => allIdeas().filter(i => i.type === type && fits(i, p) && (!depth || !i.depth || i.depth === depth));
+const depthPref = p => S.snakDepth[kindOf(p)] || 0;
 function pickIdea(p, type, excludeId) {
-  const c = pool(p, type).filter(i => i.id !== excludeId);
+  const c = pool(p, type, type === 'starter' ? depthPref(p) : 0).filter(i => i.id !== excludeId);
   const cutoff = Date.now() - 60 * 864e5;
   const fresh = c.filter(i => !(S.ideas.used[i.id] > cutoff));
   const arr = fresh.length ? fresh : c;
   return arr[Math.floor(Math.random() * arr.length)] || null;
 }
+// Partner rhythm: lighter on busy weekdays, deeper at the weekend (Sun = dyb, Fri/Sat = mellem, Tue/Thu = mellem, else let)
+const weekdayDepth = () => ({ 0: 3, 1: 1, 2: 2, 3: 1, 4: 2, 5: 2, 6: 2 })[new Date().getDay()];
 function dailyPick(p, type) {
-  const arr = pool(p, type).filter(i => !(S.ideas.used[i.id] > Date.now() - 60 * 864e5));
-  const list = arr.length ? arr : pool(p, type);
+  const d = type === 'starter' ? (depthPref(p) || (kindOf(p) === 'partner' ? weekdayDepth() : 0)) : 0;
+  const base = pool(p, type, d).length ? pool(p, type, d) : pool(p, type);
+  const arr = base.filter(i => !(S.ideas.used[i.id] > Date.now() - 60 * 864e5));
+  const list = arr.length ? arr : base;
   if (!list.length) return null;
   let h = 0; for (const c of today() + p.id) h = (h * 31 + c.charCodeAt(0)) >>> 0;
   return list[h % list.length];
@@ -488,11 +621,18 @@ async function viewSnak() {
     <div class="chips" style="margin:14px 0 4px">${ap.map(x => `<button class="chip ${x.id === p.id ? 'on' : ''}" data-act="snak-person" data-id="${x.id}"><span class="dot" style="background:${esc(x.color)}"></span>${esc(x.name)}</button>`).join('')}</div>
     ${p.kind === 'child' && age === null ? `<p class="sub">Tip: angiv fødselsår under Indstillinger, så spørgsmålene passer til alderen.</p>` : ''}`;
 
-  h += `<h2>Samtalestarter</h2>`;
-  h += st ? `<div class="card"><div style="font-size:21px;line-height:1.35;font-weight:600;margin:4px 0 12px">${esc(st.text)}</div>
+  const kd = kindOf(p); const dsel = S.snakDepth[kd] || 0;
+  const tip = st ? (kd === 'child' && age !== null && age < 5 && st.depth !== 2 ? TIPS.child.small : TIPS[kd][st.depth || 1]) : '';
+  const meta = st ? [st.depth ? DEPTH[kd][st.depth] : '', st.theme ? THEMES[st.theme] : '', st.id.startsWith('c') ? 'Egen' : ''].filter(Boolean).join(' · ') : '';
+  h += `<h2>Samtalestarter</h2>
+    <div class="chips" style="margin-bottom:8px">${[[0, 'Alle'], ...Object.entries(DEPTH[kd]).map(([k, v]) => [Number(k), v])].map(([k, v]) =>
+      `<button class="chip ${dsel === k ? 'on' : ''}" style="min-height:40px;padding:8px 14px;font-size:15px" data-act="snak-depth" data-d="${k}">${v}</button>`).join('')}</div>`;
+  h += st ? `<div class="card">${meta ? `<div class="sub" style="text-transform:uppercase;letter-spacing:.05em;font-size:12px;font-weight:700">${esc(meta)}</div>` : ''}
+      <div style="font-size:21px;line-height:1.35;font-weight:600;margin:4px 0 12px">${esc(st.text)}</div>
       <div class="row"><button class="btn small" data-act="snak-new">↻ Ny</button>
       <button class="btn small" data-act="snak-fav" data-idea="${st.id}">${isFav(st.id) ? '★ Favorit' : '☆ Gem'}</button>
-      <button class="btn small primary grow" data-act="snak-used" data-idea="${st.id}">Brugt – gem øjeblik</button></div></div>`
+      <button class="btn small primary grow" data-act="snak-used" data-idea="${st.id}">Brugt – gem øjeblik</button></div>
+      ${tip ? `<p class="sub" style="margin-top:12px">💡 ${esc(tip)}</p>` : ''}</div>`
     : `<p class="sub">Ingen spørgsmål passer endnu.</p>`;
 
   h += `<h2>Ugens udfordring</h2>`;
@@ -506,6 +646,17 @@ async function viewSnak() {
   h += `<h2>Egne idéer til ${p.kind === 'partner' ? esc(p.name) : 'børnene'}</h2><div class="card">
     ${customs.map(i => `<div class="listrow"><div class="grow">${esc(i.text)}<div class="sub">${i.type === 'starter' ? 'Spørgsmål' : 'Udfordring'}</div></div><button class="btn small ghost" data-act="del-custom" data-idea="${i.id}">Slet</button></div>`).join('') || '<p class="sub">Ingen endnu.</p>'}
     <div class="row" style="margin-top:8px"><button class="btn small grow" data-act="add-custom" data-type="starter">+ Spørgsmål</button><button class="btn small grow" data-act="add-custom" data-type="challenge">+ Udfordring</button></div></div>`;
+
+  h += `<h2>Om spørgsmålene</h2><div class="card"><details><summary>Hvor kommer de fra?</summary>
+    <p class="sub">Alle spørgsmål er skrevet til Tid, men bygger på ideer fra parforholds- og børnepsykologien:</p>
+    <ul class="sub" style="padding-left:18px;margin:6px 0">
+      <li><b>John & Julie Gottman:</b> "kærlighedskort" (at kende hinandens indre verden), beundring, den daglige snak om stress uden for forholdet, og fælles ritualer og mening.</li>
+      <li><b>Arthur Aron:</b> nærhed vokser, når man gradvist åbner sig mere – derfor Let, Mellem og Dyb.</li>
+      <li><b>Sue Johnson:</b> det store spørgsmål under det hele: "Er du der for mig?"</li>
+      <li><b>Esther Perel:</b> nysgerrighed og nyhed – at se den anden med friske øjne.</li>
+      <li><b>Til børnene:</b> åbne spørgsmål frem for ja/nej, konkret og her-og-nu for de mindste, og Gottmans følelsescoaching: at hjælpe barnet med at sætte ord på følelser.</li>
+    </ul>
+    <p class="sub">Rytme: hverdagens spørgsmål til ${esc(partner()?.name || 'din partner')} er lettere, og søndag er de dybere. Vælg selv niveau ovenfor.</p></details></div>`;
   return h;
 }
 
@@ -990,6 +1141,7 @@ document.addEventListener('click', async e => {
     case 'import': return $('#importInput').click();
     case 'change-pin': return showLock('setup1');
     case 'snak-person': S.snakPerson = id; return render();
+    case 'snak-depth': { const p = person(S.snakPerson); S.snakDepth[kindOf(p)] = Number(el.dataset.d); for (const x of activePeople()) if (kindOf(x) === kindOf(p)) delete S.snakCur[x.id]; return render(); }
     case 'snak-new': { const p = person(S.snakPerson); const i = pickIdea(p, 'starter', currentStarter(p)?.id); if (i) S.snakCur[p.id] = i.id; return render(); }
     case 'snak-show': S.snakCur[S.snakPerson] = el.dataset.idea; window.scrollTo(0, 0); return render();
     case 'snak-fav': { const f = S.ideas.fav, x = el.dataset.idea; S.ideas.fav = f.includes(x) ? f.filter(y => y !== x) : [...f, x]; await saveIdeas(); return render(); }
