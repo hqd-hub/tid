@@ -1,0 +1,1083 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f1115">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Tid">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<title>Tid</title>
+<style>
+:root{--bg:#0f1115;--card:#181b22;--card2:#20242d;--line:#2a2f3a;--text:#ece9e4;--muted:#949aa6;--accent:#f0b35a;--ink:#1a1307;--r:16px}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--text);font:16px/1.45 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif}
+body{padding-top:env(safe-area-inset-top);overscroll-behavior-y:none}
+main{padding:16px 16px calc(160px + env(safe-area-inset-bottom));max-width:640px;margin:0 auto}
+h1{font-size:28px;margin:8px 0 2px;letter-spacing:-.01em}
+h2{font-size:13px;margin:26px 0 8px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+h3{margin:0 0 6px;font-size:19px}
+p{margin:6px 0}
+.sub{color:var(--muted);font-size:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin:10px 0}
+.banner{border-color:rgba(240,179,90,.55);background:linear-gradient(rgba(240,179,90,.07),rgba(240,179,90,.07)),var(--card)}
+.moment{display:flex;gap:12px;align-items:flex-start}
+.emoji{font-size:26px;line-height:1.1;width:32px;text-align:center}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;vertical-align:1px}
+.presence i{display:inline-block;width:9px;height:9px;border-radius:50%;border:1.5px solid var(--accent);margin-left:3px;vertical-align:1px}
+.presence i.on{background:var(--accent)}
+.thumb{width:58px;height:58px;border-radius:10px;object-fit:cover;flex:none}
+nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:rgba(15,17,21,.94);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom);z-index:10}
+nav button{flex:1;background:none;border:0;color:var(--muted);padding:10px 0 8px;font-size:12px;display:flex;flex-direction:column;align-items:center;gap:3px}
+nav button.on{color:var(--accent)}
+nav svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#fab{position:fixed;right:16px;bottom:calc(76px + env(safe-area-inset-bottom));background:var(--accent);color:var(--ink);border:0;border-radius:30px;padding:16px 22px;font-size:17px;font-weight:700;box-shadow:0 8px 28px rgba(0,0,0,.45);z-index:11}
+button{font:inherit;color:inherit;cursor:pointer}
+.btn{display:block;background:var(--card2);color:var(--text);border:1px solid var(--line);border-radius:12px;padding:12px 16px;min-height:48px;font-weight:600;width:100%;margin:6px 0;text-align:center}
+.btn.primary{background:var(--accent);color:var(--ink);border-color:var(--accent)}
+.btn.ghost{background:none}
+.btn.small{display:inline-block;width:auto;min-height:40px;padding:8px 14px;margin:0}
+.btn:disabled{opacity:.35}
+.row{display:flex;gap:8px;align-items:center}
+.row>.grow{flex:1;min-width:0}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--line);background:var(--card2);border-radius:999px;padding:11px 16px;min-height:48px;font-size:16px}
+.chip.on{background:var(--accent);color:var(--ink);border-color:var(--accent);font-weight:600}
+.pres{display:flex;gap:8px}
+.pres button{flex:1;min-height:68px;border-radius:14px;border:1px solid var(--line);background:var(--card2);font-size:14px}
+.pres button b{display:block;font-size:22px}
+.pres button.on{background:var(--accent);color:var(--ink);border-color:var(--accent)}
+input,textarea,select{width:100%;background:var(--card2);color:var(--text);border:1px solid var(--line);border-radius:12px;padding:12px;font:inherit;font-size:16px}
+input[type=color]{padding:2px;width:44px;height:44px;flex:none}
+textarea{min-height:96px;resize:vertical}
+.lbl{display:block;color:var(--muted);font-size:13px;margin:16px 0 8px;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+.hidden{display:none!important}
+#sheetWrap{position:fixed;inset:0;z-index:20}
+.backdrop{position:absolute;inset:0;background:rgba(0,0,0,.6)}
+#sheet{position:absolute;left:0;right:0;bottom:0;max-height:94vh;overflow:auto;-webkit-overflow-scrolling:touch;background:var(--bg);border-radius:22px 22px 0 0;border-top:1px solid var(--line);padding:10px 16px calc(24px + env(safe-area-inset-bottom));max-width:640px;margin:0 auto;animation:up .22s ease-out}
+@keyframes up{from{transform:translateY(40px);opacity:0}}
+.grab{width:40px;height:5px;border-radius:3px;background:var(--line);margin:0 auto 12px}
+#modalWrap{position:fixed;inset:0;z-index:40;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;padding:20px}
+#modal{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;width:100%;max-width:420px}
+#toast{position:fixed;left:16px;right:16px;bottom:calc(146px + env(safe-area-inset-bottom));z-index:50;background:#2d323d;border-radius:14px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;gap:12px;max-width:600px;margin:0 auto;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+#toast button{background:none;border:0;color:var(--accent);font-weight:700;padding:4px}
+#lock{position:fixed;inset:0;z-index:60;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center}
+.pinDots{display:flex;gap:14px;margin:22px 0 10px;min-height:16px}
+.pinDots i{width:14px;height:14px;border-radius:50%;border:2px solid var(--muted)}
+.pinDots i.on{background:var(--accent);border-color:var(--accent)}
+.keypad{display:grid;grid-template-columns:repeat(3,76px);gap:16px;margin-top:14px}
+.keypad button{width:76px;height:76px;border-radius:50%;border:0;background:var(--card2);font-size:28px}
+.keypad button.blank{background:none;font-size:15px;color:var(--muted)}
+.msg{min-height:22px;color:var(--accent);font-size:14px}
+.stat{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center}
+.stat div{background:var(--card2);border-radius:12px;padding:10px 4px;font-size:13px;color:var(--muted)}
+.stat b{display:block;font-size:22px;color:var(--text)}
+.daystrip{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center;font-size:12px;color:var(--muted)}
+.daystrip div{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:6px 0;min-height:58px}
+.daystrip div.today{border-color:var(--accent)}
+.daystrip .dot{margin:2px}
+.steps{display:flex;gap:4px;margin:4px 0 16px}
+.steps i{flex:1;height:4px;border-radius:2px;background:var(--line)}
+.steps i.on{background:var(--accent)}
+.switch{position:relative;width:52px;height:32px;flex:none;display:inline-block}
+.switch input{position:absolute;opacity:0;width:0;height:0}
+.switch span{position:absolute;inset:0;background:var(--line);border-radius:16px;transition:.2s}
+.switch span:after{content:"";position:absolute;width:26px;height:26px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}
+.switch input:checked+span{background:var(--accent)}
+.switch input:checked+span:after{transform:translateX(20px)}
+.listrow{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+.listrow:last-child{border-bottom:0}
+code{background:var(--card2);padding:2px 6px;border-radius:6px;font-size:13px;word-break:break-all}
+ol.guide{padding-left:20px;margin:8px 0}
+ol.guide li{margin:7px 0}
+details summary{cursor:pointer;color:var(--accent);font-weight:600;padding:6px 0}
+.weeknav{display:flex;align-items:center;justify-content:space-between}
+.weeknav button{background:var(--card2);border:1px solid var(--line);border-radius:12px;width:48px;height:44px;font-size:20px}
+.photoPrev{width:100%;max-height:260px;object-fit:cover;border-radius:12px;margin-top:8px}
+.quote{border-left:3px solid var(--accent);padding-left:10px;margin:8px 0;white-space:pre-wrap}
+</style>
+</head>
+<body>
+<main id="view"></main>
+<button id="fab" data-act="capture" class="hidden">+ Øjeblik</button>
+<nav id="nav">
+  <button data-act="tab" data-tab="today"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>I dag</button>
+  <button data-act="tab" data-tab="week"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="3"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>Uge</button>
+  <button data-act="tab" data-tab="snak"><svg viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-4.9A8 8 0 1 1 21 12z"/><path d="M8.5 11h.01M12 11h.01M15.5 11h.01"/></svg>Snak</button>
+  <button data-act="tab" data-tab="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Indstillinger</button>
+</nav>
+<div id="sheetWrap" class="hidden"><div class="backdrop" data-act="close-sheet"></div><div id="sheet"></div></div>
+<div id="modalWrap" class="hidden"><div id="modal"></div></div>
+<div id="toast" class="hidden"></div>
+<div id="lock" class="hidden"></div>
+<input type="file" id="photoInput" accept="image/*" class="hidden">
+<input type="file" id="importInput" class="hidden">
+
+<script>
+'use strict';
+const VERSION = '1.1.0';
+const ITER = 310000;               // PBKDF2 iterations for the backup key
+const BK_NAME = 'Tid-backup.tid';  // file name in Google Drive
+const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file'; // only files this app created
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid = () => (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2));
+
+/* ---------------- IndexedDB ---------------- */
+let db;
+function openDB() {
+  return new Promise((res, rej) => {
+    const r = indexedDB.open('tid', 1);
+    r.onupgradeneeded = () => {
+      const d = r.result;
+      const keys = { people: 'id', categories: 'id', moments: 'id', reviews: 'isoWeek', photos: 'id', kv: 'k' };
+      for (const [n, k] of Object.entries(keys)) if (!d.objectStoreNames.contains(n)) d.createObjectStore(n, { keyPath: k });
+    };
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => rej(r.error);
+  });
+}
+const store = (s, m = 'readonly') => db.transaction(s, m).objectStore(s);
+const rq = r => new Promise((res, rej) => { r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+const all = s => rq(store(s).getAll());
+const get = (s, k) => rq(store(s).get(k));
+const put = (s, v) => rq(store(s, 'readwrite').put(v));
+const del = (s, k) => rq(store(s, 'readwrite').delete(k));
+const clear = s => rq(store(s, 'readwrite').clear());
+const getKV = async k => (await get('kv', k))?.v;
+const setKV = (k, v) => put('kv', { k, v });
+
+/* ---------------- Bytes ---------------- */
+function b64(buf) {
+  const u = buf instanceof Uint8Array ? buf : new Uint8Array(buf);
+  let s = '';
+  for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000));
+  return btoa(s);
+}
+function unb64(s) {
+  const bin = atob(s); const u = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+  return u;
+}
+
+/* ---------------- Dates ---------------- */
+const pad = n => String(n).padStart(2, '0');
+const ds = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const today = () => ds(new Date());
+const parse = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d, 12); };
+const addDays = (s, n) => { const d = parse(s); d.setDate(d.getDate() + n); return ds(d); };
+const mondayOf = s => { const d = parse(s); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return ds(d); };
+function isoWeek(s) {
+  const d = parse(s); d.setDate(d.getDate() - ((d.getDay() + 6) % 7) + 3); // Thursday of this week
+  const y = d.getFullYear(); const j4 = new Date(y, 0, 4, 12);
+  const w1 = new Date(j4); w1.setDate(j4.getDate() - ((j4.getDay() + 6) % 7) + 3);
+  return `${y}-W${pad(1 + Math.round((d - w1) / 6048e5))}`;
+}
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+const fmtDay = s => cap(parse(s).toLocaleDateString('da-DK', { weekday: 'long', day: 'numeric', month: 'long' }));
+const fmtShort = s => parse(s).toLocaleDateString('da-DK', { day: 'numeric', month: 'short' });
+const fmtTime = t => new Date(t).toLocaleString('da-DK', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+const wkNum = wk => Number(wk.split('-W')[1]);
+
+/* ---------------- Conversation library (append only: ids follow order) ---------------- */
+const mk = (prefix, type, who) => (list) => list.map(([age, text], i) => ({ id: prefix + (i + 1), type, for: who, age, text }));
+const IDEAS = [
+  ...mk('ks', 'starter', 'child')([
+    [3, 'Hvad var det sjoveste, du lavede i dag?'], [3, 'Hvem legede du med i dag?'], [3, 'Hvis du var et dyr, hvilket dyr ville du så være?'],
+    [3, 'Hvad skal vi lave i weekenden, hvis du må bestemme?'], [3, 'Hvad gjorde dig glad i dag?'], [3, 'Var der noget, der var svært i dag?'],
+    [3, 'Hvad drømte du om i nat?'], [3, 'Hvis du kunne flyve, hvor ville du så flyve hen?'], [3, 'Hvad er din yndlingsfarve lige nu – og hvorfor?'],
+    [3, 'Hvis vi fik et kæledyr, hvad skulle det så hedde?'], [3, 'Hvem var sød ved dig i dag?'], [3, 'Hvad var dagens bedste mad?'],
+    [3, 'Hvis dit legetøj kunne tale, hvad ville det så sige om dig?'], [3, 'Hvad skal vi synge, når vi putter i aften?'],
+    [5, 'Hvad var dagens højdepunkt – og dagens lavpunkt?'], [5, 'Lærte du noget nyt i dag, som jeg ikke ved?'],
+    [5, 'Hvis du var lærer i en dag, hvad skulle klassen så lave?'], [5, 'Hvad er du blevet bedre til i år?'],
+    [5, 'Hvis du kunne bytte plads med mig i en dag, hvad ville du så gøre?'], [5, 'Hvad er det modigste, du nogensinde har gjort?'],
+    [5, 'Er der nogen i din klasse, der godt kunne bruge en ven?'], [5, 'Hvis du kunne lave en ny regel derhjemme, hvad skulle den så være?'],
+    [5, 'Hvad tror du, jeg lavede på arbejdet i dag?'], [5, 'Hvilken superkraft ville du gerne have – og hvad ville du bruge den til?'],
+    [5, 'Hvad gør du, når du bliver sur – og hvad hjælper dig?'], [5, 'Hvis vi lavede en film om vores familie, hvad skulle den så hedde?'],
+    [5, 'Hvad er det sjoveste, vi nogensinde har lavet sammen?'], [5, 'Hvad glæder du dig mest til lige nu?'],
+    [5, 'Hvad skulle der stå i en bog om dig?'], [5, 'Hvis du fik 100 kroner, hvad ville du så gøre med dem?'],
+    [5, 'Hvem er den sjoveste i familien – og hvorfor?'], [5, 'Hvad vil du gerne have, at vi to laver mere af?']
+  ]),
+  ...mk('ps', 'starter', 'partner')([
+    [0, 'Hvad har fyldt mest for dig i denne uge?'], [0, 'Hvad var dagens bedste øjeblik for dig?'],
+    [0, 'Er der noget, du gerne vil have mere af fra mig lige nu?'], [0, 'Hvad glæder du dig til i den kommende måned?'],
+    [0, 'Hvornår følte du dig sidst rigtig set af mig?'], [0, 'Hvad savner du fra tiden før børnene?'],
+    [0, 'Hvad er en drøm, du ikke har sagt højt i et stykke tid?'], [0, 'Hvis vi havde en hel dag kun for os to, hvad skulle vi så lave?'],
+    [0, 'Hvad er du stolt af, at du har klaret for nylig?'], [0, 'Hvad tror du, børnene vil huske fra den her tid?'],
+    [0, 'Hvilket minde om os to tænker du tit på?'], [0, 'Hvad stresser dig mest lige nu – og kan jeg tage noget af det?'],
+    [0, 'Hvad har overrasket dig mest ved at være forælder?'], [0, 'Hvor vil du gerne være om fem år?'],
+    [0, 'Hvad gør jeg, som du sætter pris på, men sjældent siger?'], [0, 'Hvis pengene ikke betød noget, hvor skulle vores næste rejse så gå hen?'],
+    [0, 'Hvad har du lyst til at lære eller prøve næste år?'], [0, 'Hvordan har du det – helt ærligt?'],
+    [0, 'Hvad var det første, du lagde mærke til ved mig?'], [0, 'Hvilken tradition vil du gerne starte i vores familie?'],
+    [0, 'Er der noget, vi skal sige nej til, så vi får mere tid sammen?'], [0, 'Hvad giver dig energi lige nu – og hvad dræner dig?'],
+    [0, 'Hvad vil du gerne, at vi gør anderledes end vores egne forældre?'], [0, 'Hvilken sang minder dig om os?'],
+    [0, 'Hvad er det bedste råd, du nogensinde har fået?']
+  ]),
+  ...mk('kc', 'challenge', 'child')([
+    [3, '10 minutter, hvor barnet bestemmer legen – telefonen i et andet rum.'], [3, 'Byg en hule sammen af puder og tæpper.'],
+    [3, 'Lav aftensmaden sammen – barnet vælger én ting til maden.'], [3, 'Gå på opdagelse i nabolaget og find fem ting, I aldrig har lagt mærke til.'],
+    [3, 'Læs en ekstra godnathistorie – og lad barnet finde på slutningen.'], [3, 'Dans til tre sange i stuen.'],
+    [3, 'Tegn hinanden – og giv tegningerne en titel.'], [3, 'Spis morgenmad et nyt sted: på gulvet, i haven eller i sengen.'],
+    [3, 'Læg en lille tegning eller seddel i madkassen eller tasken.'], [3, 'Alenetur: 30 minutter kun jer to – barnet vælger hvor.'],
+    [5, 'Lær barnet noget, du kan – eller lad barnet lære dig noget.'], [5, 'Byg noget af Lego efter en tegning, I laver sammen.'],
+    [5, 'Spil et brætspil uden at kigge på telefonen én eneste gang.'], [5, 'Ja-time: sig ja til alle rimelige forslag i en time.'],
+    [5, 'Lav en tidskapsel med tre ting fra i år.'], [5, 'Spørg "Hvad vil du gerne have, at vi laver sammen?" – og gør det inden søndag.'],
+    [5, 'Gå- eller cykeltur, hvor barnet er guide og bestemmer ruten.'], [5, 'Fortæl en historie fra dengang du var på samme alder.']
+  ]),
+  ...mk('pc', 'challenge', 'partner')([
+    [0, 'Sig tre konkrete ting, du sætter pris på ved hende – i dag.'], [0, '20 minutter uden telefoner, når børnene er lagt i seng.'],
+    [0, 'Planlæg en date og stå for det hele – pasning inklusive.'], [0, 'Overtag en af hendes faste opgaver i denne uge uden at gøre noget nummer ud af det.'],
+    [0, 'Skriv en håndskrevet seddel og læg den, hvor hun finder den.'], [0, 'Gå en tur sammen – kun jer to.'],
+    [0, 'Lav morgenkaffe eller te til hende, før hun står op.'], [0, 'Spørg "Hvad kan jeg tage fra dig i denne uge?" – og gør det.'],
+    [0, 'Kig gamle billeder af jer to igennem og fortæl hinanden et minde.'], [0, 'Giv hende en time helt for sig selv, mens du har børnene.'],
+    [0, 'Lav hendes yndlingsret.'], [0, 'Send hende en besked midt på dagen om noget, du holder af ved hende.'],
+    [0, 'Byd hende op til dans i køkkenet.'], [0, 'Spørg ind til noget, hun fortalte for nylig – og lyt uden at løse det.'],
+    [0, 'Planlæg en lille overraskelse til næste weekend.'], [0, 'Lav en drømmeliste for næste år sammen.']
+  ])
+];
+
+/* ---------------- State ---------------- */
+const S = { tab: 'today', people: [], cats: [], moments: [], reviews: [], weekOffset: 0, unlocked: false, pending: [], backupPending: false, keyMem: null,
+  ideas: { fav: [], used: {}, custom: [], week: {} }, snakPerson: null, snakCur: {} };
+const person = id => S.people.find(p => p.id === id);
+const catOf = id => S.cats.find(c => c.id === id);
+const reviewOf = wk => S.reviews.find(r => r.isoWeek === wk);
+const isCouple = m => m.category === 'kaerestetid' || (m.people.length === 1 && person(m.people[0])?.kind === 'partner');
+const activePeople = () => S.people.filter(p => p.active);
+const children = () => activePeople().filter(p => p.kind === 'child');
+const partner = () => activePeople().find(p => p.kind === 'partner');
+
+async function loadAll() {
+  S.people = (await all('people')).sort((a, b) => a.order - b.order);
+  S.cats = (await all('categories')).sort((a, b) => a.order - b.order);
+  S.moments = (await all('moments')).sort((a, b) => b.date.localeCompare(a.date) || b.createdAt - a.createdAt);
+  S.reviews = (await all('reviews')).sort((a, b) => b.isoWeek.localeCompare(a.isoWeek));
+  S.ideas = Object.assign({ fav: [], used: {}, custom: [], week: {} }, (await getKV('ideas')) || {});
+}
+const saveIdeas = () => setKV('ideas', S.ideas);
+
+/* ---------------- Idea logic ---------------- */
+const allIdeas = () => [...IDEAS, ...S.ideas.custom];
+const ideaOf = id => allIdeas().find(i => i.id === id);
+const ageOf = p => p.birthYear ? new Date().getFullYear() - p.birthYear : null;
+function fits(i, p) {
+  if (i.for !== (p.kind === 'partner' ? 'partner' : 'child')) return false;
+  const age = ageOf(p);
+  return !(p.kind === 'child' && age !== null && (i.age || 0) > age);
+}
+const pool = (p, type) => allIdeas().filter(i => i.type === type && fits(i, p));
+function pickIdea(p, type, excludeId) {
+  const c = pool(p, type).filter(i => i.id !== excludeId);
+  const cutoff = Date.now() - 60 * 864e5;
+  const fresh = c.filter(i => !(S.ideas.used[i.id] > cutoff));
+  const arr = fresh.length ? fresh : c;
+  return arr[Math.floor(Math.random() * arr.length)] || null;
+}
+function dailyPick(p, type) {
+  const arr = pool(p, type).filter(i => !(S.ideas.used[i.id] > Date.now() - 60 * 864e5));
+  const list = arr.length ? arr : pool(p, type);
+  if (!list.length) return null;
+  let h = 0; for (const c of today() + p.id) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  return list[h % list.length];
+}
+function currentStarter(p) {
+  const id = S.snakCur[p.id];
+  return (id && ideaOf(id)) || dailyPick(p, 'starter');
+}
+async function weekChallenge(p, wk = isoWeek(today()), create = true) {
+  const w = S.ideas.week[wk] || (S.ideas.week[wk] = {});
+  if ((!w[p.id] || !ideaOf(w[p.id].id)) && create) {
+    const i = pickIdea(p, 'challenge'); if (!i) return null;
+    w[p.id] = { id: i.id, done: false }; await saveIdeas();
+  }
+  return w[p.id] || null;
+}
+
+async function seed() {
+  const cats = [
+    ['leg', '🧩', 'Leg'], ['godnat', '🌙', 'Godnat'], ['udflugt', '🌳', 'Udflugt'], ['snak', '💬', 'Snak'],
+    ['hjalp', '🤝', 'Hjalp med noget'], ['maaltid', '🍽️', 'Måltid'], ['aktivitet', '⚽', 'Aktivitet'], ['kaerestetid', '❤️', 'Kærestetid']
+  ];
+  for (const [i, [id, emoji, label]] of cats.entries()) await put('categories', { id, emoji, label, active: true, order: i, partnerOnly: id === 'kaerestetid' });
+  await setKV('seeded', true);
+}
+
+// Names are entered on first launch so no personal data lives in the app's code
+async function askPeople() {
+  const v = await modal({ title: 'Hvem er det for?', text: 'Navnene gemmes kun på din telefon. Du kan tilføje og ændre dem under Indstillinger.',
+    fields: [{ name: 'c1', placeholder: 'Barn 1' }, { name: 'c2', placeholder: 'Barn 2' }, { name: 'p', placeholder: 'Partner' }], ok: 'Gem', cancel: '' });
+  const list = [[v?.c1, 'child', '#7aa2f7'], [v?.c2, 'child', '#e0af68'], [v?.p, 'partner', '#c49bf5']].filter(x => x[0] && x[0].trim());
+  for (const [i, [name, kind, color]] of list.entries()) await put('people', { id: uid(), name: name.trim(), kind, color, active: true, order: i });
+  await loadAll();
+}
+
+/* ---------------- UI helpers ---------------- */
+let toastT;
+function toast(msg, actLabel, act) {
+  const t = $('#toast');
+  t.innerHTML = `<span>${esc(msg)}</span>${actLabel ? `<button>${esc(actLabel)}</button>` : ''}`;
+  t.classList.remove('hidden');
+  if (actLabel) t.querySelector('button').onclick = () => { t.classList.add('hidden'); act(); };
+  clearTimeout(toastT);
+  toastT = setTimeout(() => t.classList.add('hidden'), actLabel ? 6000 : 2600);
+}
+function modal({ title, text = '', html = '', fields = [], ok = 'OK', cancel = 'Annullér' }) {
+  return new Promise(res => {
+    const m = $('#modal');
+    m.innerHTML = `<h3>${esc(title)}</h3>${text ? `<p class="sub">${esc(text)}</p>` : ''}${html}
+      ${fields.map(f => `<input name="${f.name}" type="${f.type || 'text'}" placeholder="${esc(f.placeholder || '')}" value="${esc(f.value || '')}" style="margin:6px 0" autocomplete="off" autocapitalize="off">`).join('')}
+      <div class="row" style="margin-top:12px">${cancel ? `<button class="btn ghost" data-m="0">${esc(cancel)}</button>` : ''}<button class="btn primary" data-m="1">${esc(ok)}</button></div>`;
+    $('#modalWrap').classList.remove('hidden');
+    const first = m.querySelector('input'); if (first) setTimeout(() => first.focus(), 60);
+    m.onclick = e => {
+      const b = e.target.closest('[data-m]'); if (!b) return;
+      const vals = {}; m.querySelectorAll('input').forEach(i => vals[i.name] = i.value);
+      $('#modalWrap').classList.add('hidden'); m.onclick = null;
+      res(b.dataset.m === '1' ? vals : null);
+    };
+  });
+}
+const confirmBox = (title, text, ok = 'Fortsæt') => modal({ title, text, ok }).then(v => !!v);
+function openSheet(html) { $('#sheet').innerHTML = '<div class="grab"></div>' + html; $('#sheetWrap').classList.remove('hidden'); hydratePhotos($('#sheet')); }
+function closeSheet() { $('#sheetWrap').classList.add('hidden'); $('#sheet').innerHTML = ''; C = null; R = null; }
+
+const photoURLs = new Map();
+async function photoURL(id) {
+  if (photoURLs.has(id)) return photoURLs.get(id);
+  const p = await get('photos', id); if (!p) return '';
+  const u = URL.createObjectURL(new Blob([p.buf], { type: p.type || 'image/jpeg' }));
+  photoURLs.set(id, u); return u;
+}
+function hydratePhotos(root) { root.querySelectorAll('img[data-photo]').forEach(async img => { img.src = await photoURL(img.dataset.photo); }); }
+
+const presDots = n => `<span class="presence">${[1, 2, 3].map(i => `<i class="${i <= n ? 'on' : ''}"></i>`).join('')}</span>`;
+const PRES = { 1: 'Halvt', 2: 'Til stede', 3: 'Helt' };
+function momentCard(m) {
+  const c = catOf(m.category) || { emoji: '•', label: '–' };
+  const ps = m.people.map(person).filter(Boolean);
+  return `<div class="card moment" data-act="edit" data-id="${m.id}">
+    <div class="emoji">${esc(c.emoji)}</div>
+    <div style="flex:1;min-width:0">
+      <div><b>${esc(c.label)}</b> ${presDots(m.presence)}</div>
+      <div class="sub">${ps.map(p => `<span class="dot" style="background:${esc(p.color)}"></span>${esc(p.name)}`).join(' &nbsp;')}</div>
+      ${m.note ? `<div style="margin-top:6px">${esc(m.note)}</div>` : ''}
+    </div>
+    ${m.photoId ? `<img class="thumb" data-photo="${m.photoId}" alt="">` : ''}
+  </div>`;
+}
+const banner = (title, text, act, extra = '') => `<div class="card banner" data-act="${act}" ${extra}><b>${esc(title)}</b>${text ? `<div class="sub">${esc(text)}</div>` : ''}</div>`;
+
+/* ---------------- Views ---------------- */
+async function render() {
+  document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b.dataset.tab === S.tab));
+  $('#fab').classList.toggle('hidden', S.tab === 'settings' || S.tab === 'snak' || !S.unlocked);
+  const v = $('#view');
+  v.innerHTML = S.tab === 'today' ? await viewToday() : S.tab === 'week' ? viewWeek() : S.tab === 'snak' ? await viewSnak() : await viewSettings();
+  hydratePhotos(v);
+}
+
+async function viewToday() {
+  const t = today(); const now = new Date(); const wk = isoWeek(t);
+  const todays = S.moments.filter(m => m.date === t);
+  let h = `<h1>${fmtDay(t)}</h1><div class="sub">${todays.length ? `${todays.length} ${todays.length === 1 ? 'øjeblik' : 'øjeblikke'} i dag` : 'Uge ' + wkNum(wk)}</div>`;
+
+  if (!(await backupKey())) h += banner('Opsæt backup', 'Vælg et backup-kodeord og forbind Google Drive, så dine øjeblikke er sikret.', 'go-backup');
+  else if (S.backupPending) h += banner('Backup venter', 'Tryk for at tage backup til Google Drive.', 'drive-backup');
+  if (now.getDay() === 0 && now.getHours() >= 16 && !reviewOf(wk)) h += banner('Søndagsrefleksion', 'Fem minutter med ugen, før I planlægger den næste.', 'review', `data-wk="${wk}"`);
+  if (now.getHours() >= 19 && !todays.length) h += banner('Noget værd at gemme fra i dag?', 'Et lille øjeblik er nok.', 'capture');
+
+  const intention = reviewOf(isoWeek(addDays(t, -7)))?.intention;
+  if (intention) h += `<div class="card"><div class="sub">Ugens intention</div><div class="quote">${esc(intention)}</div></div>`;
+
+  const ap = activePeople();
+  if (ap.length) {
+    const qs = ap.map(p => [p, dailyPick(p, 'starter')]).filter(x => x[1]);
+    let done = 0, tot = 0;
+    for (const p of ap) { const w = S.ideas.week[wk]?.[p.id]; if (w) { tot++; if (w.done) done++; } }
+    h += `<div class="card" data-act="tab" data-tab="snak"><div class="sub">Dagens samtalestartere</div>
+      ${qs.map(([p, i]) => `<p><span class="dot" style="background:${esc(p.color)}"></span><b>${esc(p.name)}:</b> ${esc(i.text)}</p>`).join('')}
+      <div class="sub" style="margin-top:6px">${tot ? `Ugens udfordringer: ${done} af ${tot} gennemført` : 'Se ugens udfordringer under Snak'} ›</div></div>`;
+  }
+
+  h += `<h2>I dag</h2>` + (todays.length ? todays.map(momentCard).join('') : `<p class="sub">Ingen øjeblikke endnu i dag.</p>`);
+
+  const earlier = S.moments.filter(m => m.date < t && m.date >= addDays(t, -14));
+  let last = '';
+  for (const m of earlier) {
+    if (m.date !== last) { h += `<h2>${fmtDay(m.date)}</h2>`; last = m.date; }
+    h += momentCard(m);
+  }
+  return h;
+}
+
+function viewWeek() {
+  const base = addDays(mondayOf(today()), S.weekOffset * 7);
+  const days = [...Array(7)].map((_, i) => addDays(base, i));
+  const wk = isoWeek(base);
+  const ms = S.moments.filter(m => m.date >= days[0] && m.date <= days[6]);
+  const avg = ms.length ? (ms.reduce((a, m) => a + m.presence, 0) / ms.length).toFixed(1).replace('.', ',') : '–';
+  const couple = ms.filter(isCouple).length;
+
+  let h = `<div class="weeknav"><button data-act="week-prev">‹</button>
+    <div style="text-align:center"><h1 style="margin:0">Uge ${wkNum(wk)}</h1><div class="sub">${fmtShort(days[0])} – ${fmtShort(days[6])}</div></div>
+    <button data-act="week-next" ${S.weekOffset >= 0 ? 'disabled style="opacity:.3"' : ''}>›</button></div>`;
+
+  const intention = reviewOf(isoWeek(addDays(base, -7)))?.intention;
+  if (intention) h += `<div class="card"><div class="sub">Intention for ugen</div><div class="quote">${esc(intention)}</div></div>`;
+
+  h += `<div class="card stat"><div><b>${ms.length}</b>øjeblikke</div><div><b>${avg}</b>nærvær</div><div><b>${couple}</b>kærestetid</div></div>`;
+
+  const letters = ['M', 'T', 'O', 'T', 'F', 'L', 'S'];
+  h += `<div class="daystrip">${days.map((d, i) => {
+    const ids = [...new Set(ms.filter(m => m.date === d).flatMap(m => m.people))];
+    return `<div class="${d === today() ? 'today' : ''}">${letters[i]}<br>${ids.map(id => person(id) ? `<span class="dot" style="background:${esc(person(id).color)}"></span>` : '').join('')}</div>`;
+  }).join('')}</div>`;
+
+  h += `<h2>Personer</h2>`;
+  for (const p of activePeople()) {
+    const pm = ms.filter(m => m.people.includes(p.id));
+    const solo = pm.filter(m => m.people.length === 1).length;
+    const pa = pm.length ? (pm.reduce((a, m) => a + m.presence, 0) / pm.length).toFixed(1).replace('.', ',') : '–';
+    h += `<div class="card"><div class="row"><span class="dot" style="background:${esc(p.color)}"></span><b class="grow">${esc(p.name)}</b><span class="sub">nærvær ${pa}</span></div>
+      <div class="sub" style="margin-top:4px">${pm.length} ${pm.length === 1 ? 'øjeblik' : 'øjeblikke'} · ${p.kind === 'partner' ? 'kun jer to' : 'alene med dig'}: ${solo}</div></div>`;
+  }
+
+  const wch = S.ideas.week[wk] || {};
+  const chs = activePeople().filter(p => wch[p.id] && ideaOf(wch[p.id].id));
+  if (chs.length) {
+    h += `<h2>Ugens udfordringer</h2><div class="card">` + chs.map(p => `<div class="listrow"><span class="dot" style="background:${esc(p.color)}"></span>
+      <div class="grow"><b>${esc(p.name)}</b><div class="sub">${esc(ideaOf(wch[p.id].id).text)}</div></div><span class="sub">${wch[p.id].done ? '✓ gjort' : 'åben'}</span></div>`).join('') + `</div>`;
+  }
+
+  const rv = reviewOf(wk);
+  h += `<h2>Refleksion</h2>`;
+  if (rv) {
+    h += `<div class="card" data-act="review" data-wk="${wk}"><b>Ugens refleksion er skrevet</b>
+      ${rv.intention ? `<div class="sub" style="margin-top:4px">Intention for næste uge: ${esc(rv.intention)}</div>` : ''}
+      <div class="sub" style="margin-top:4px">Tryk for at læse eller redigere</div></div>`;
+  } else {
+    h += `<button class="btn primary" data-act="review" data-wk="${wk}">Start søndagsrefleksion</button>`;
+  }
+
+  const past = S.reviews.filter(r => r.isoWeek !== wk).slice(0, 12);
+  if (past.length) {
+    h += `<h2>Tidligere refleksioner</h2>`;
+    h += past.map(r => `<div class="card" data-act="review" data-wk="${r.isoWeek}"><b>Uge ${wkNum(r.isoWeek)}</b>${r.intention ? ` <span class="sub">· ${esc(r.intention)}</span>` : ''}</div>`).join('');
+  }
+  return h;
+}
+
+async function viewSnak() {
+  const ap = activePeople();
+  if (!ap.length) return `<h1>Snak</h1><p class="sub">Tilføj personer under Indstillinger først.</p>`;
+  if (!ap.find(p => p.id === S.snakPerson)) S.snakPerson = ap[0].id;
+  const p = person(S.snakPerson);
+  const st = currentStarter(p);
+  const ch = await weekChallenge(p);
+  const chI = ch && ideaOf(ch.id);
+  const isFav = id => S.ideas.fav.includes(id);
+  const favs = S.ideas.fav.map(ideaOf).filter(i => i && i.type === 'starter' && fits(i, p));
+  const customs = S.ideas.custom.filter(i => i.for === (p.kind === 'partner' ? 'partner' : 'child'));
+  const age = ageOf(p);
+
+  let h = `<h1>Snak</h1><div class="sub">Samtalestartere og små udfordringer</div>
+    <div class="chips" style="margin:14px 0 4px">${ap.map(x => `<button class="chip ${x.id === p.id ? 'on' : ''}" data-act="snak-person" data-id="${x.id}"><span class="dot" style="background:${esc(x.color)}"></span>${esc(x.name)}</button>`).join('')}</div>
+    ${p.kind === 'child' && age === null ? `<p class="sub">Tip: angiv fødselsår under Indstillinger, så spørgsmålene passer til alderen.</p>` : ''}`;
+
+  h += `<h2>Samtalestarter</h2>`;
+  h += st ? `<div class="card"><div style="font-size:21px;line-height:1.35;font-weight:600;margin:4px 0 12px">${esc(st.text)}</div>
+      <div class="row"><button class="btn small" data-act="snak-new">↻ Ny</button>
+      <button class="btn small" data-act="snak-fav" data-idea="${st.id}">${isFav(st.id) ? '★ Favorit' : '☆ Gem'}</button>
+      <button class="btn small primary grow" data-act="snak-used" data-idea="${st.id}">Brugt – gem øjeblik</button></div></div>`
+    : `<p class="sub">Ingen spørgsmål passer endnu.</p>`;
+
+  h += `<h2>Ugens udfordring</h2>`;
+  h += chI ? `<div class="card ${ch.done ? '' : 'banner'}"><div style="font-size:18px;font-weight:600;margin:2px 0 12px">${esc(chI.text)}</div>
+      ${ch.done ? `<div class="sub">✓ Gennemført i denne uge</div>`
+        : `<div class="row"><button class="btn small" data-act="ch-new">↻ En anden</button><button class="btn small primary grow" data-act="ch-done">Gennemført – gem øjeblik</button></div>`}</div>`
+    : `<p class="sub">Ingen udfordringer passer endnu.</p>`;
+
+  if (favs.length) h += `<h2>Favoritter</h2><div class="card">${favs.map(i => `<div class="listrow" data-act="snak-show" data-idea="${i.id}"><div class="grow">${esc(i.text)}</div><span class="sub">›</span></div>`).join('')}</div>`;
+
+  h += `<h2>Egne idéer til ${p.kind === 'partner' ? esc(p.name) : 'børnene'}</h2><div class="card">
+    ${customs.map(i => `<div class="listrow"><div class="grow">${esc(i.text)}<div class="sub">${i.type === 'starter' ? 'Spørgsmål' : 'Udfordring'}</div></div><button class="btn small ghost" data-act="del-custom" data-idea="${i.id}">Slet</button></div>`).join('') || '<p class="sub">Ingen endnu.</p>'}
+    <div class="row" style="margin-top:8px"><button class="btn small grow" data-act="add-custom" data-type="starter">+ Spørgsmål</button><button class="btn small grow" data-act="add-custom" data-type="challenge">+ Udfordring</button></div></div>`;
+  return h;
+}
+
+async function viewSettings() {
+  const cid = (await getKV('driveClientId')) || '';
+  const tok = await getKV('driveToken');
+  const tokValid = tok && tok.exp > Date.now();
+  const last = await getKV('lastBackup');
+  const hasKey = !!(await backupKey());
+  const face = await getKV('faceId');
+  const faceAvail = await faceAvailable();
+  const origin = location.origin;
+  const redirect = redirectUri();
+
+  let h = `<h1>Indstillinger</h1>`;
+
+  h += `<h2>Personer</h2><div class="card">${S.people.map(p => `<div class="listrow">
+      <input type="color" value="${esc(p.color)}" data-ch="person-color" data-id="${p.id}">
+      <input class="grow" value="${esc(p.name)}" data-ch="person-name" data-id="${p.id}">
+      <select style="width:110px" data-ch="person-kind" data-id="${p.id}"><option value="child" ${p.kind === 'child' ? 'selected' : ''}>Barn</option><option value="partner" ${p.kind === 'partner' ? 'selected' : ''}>Partner</option></select>
+      <label class="switch" title="Aktiv"><input type="checkbox" ${p.active ? 'checked' : ''} data-ch="person-active" data-id="${p.id}"><span></span></label>
+    </div>${p.kind === 'child' ? `<div class="row" style="padding:0 0 10px 54px"><span class="sub grow">Fødselsår (til spørgsmål efter alder)</span>
+      <input type="number" inputmode="numeric" style="width:96px" value="${p.birthYear || ''}" placeholder="fx 2020" data-ch="person-year" data-id="${p.id}"></div>` : ''}`).join('')}
+    <button class="btn" data-act="add-person">+ Tilføj person</button></div>`;
+
+  h += `<h2>Kategorier</h2><div class="card">${S.cats.map(c => `<div class="listrow">
+      <input style="width:56px;text-align:center" value="${esc(c.emoji)}" data-ch="cat-emoji" data-id="${c.id}">
+      <input class="grow" value="${esc(c.label)}" data-ch="cat-label" data-id="${c.id}">
+      <label class="switch"><input type="checkbox" ${c.active ? 'checked' : ''} data-ch="cat-active" data-id="${c.id}"><span></span></label>
+    </div>`).join('')}
+    <button class="btn" data-act="add-cat">+ Tilføj kategori</button></div>`;
+
+  h += `<h2>Lås</h2><div class="card">
+    ${faceAvail ? `<div class="listrow"><div class="grow">Face ID</div><label class="switch"><input type="checkbox" ${face ? 'checked' : ''} data-ch="faceid"><span></span></label></div>` : `<p class="sub">Face ID er ikke tilgængelig i denne browser.</p>`}
+    <button class="btn" data-act="change-pin">Skift kode</button></div>`;
+
+  h += `<h2>Backup</h2><div class="card">
+    <div class="listrow"><div class="grow">Backup-kodeord<div class="sub">${hasKey ? 'Valgt' : 'Ikke valgt endnu'}</div></div><button class="btn small" data-act="set-pass">${hasKey ? 'Skift' : 'Vælg'}</button></div>
+    <div class="listrow"><div class="grow">Google Drive<div class="sub">${!cid ? 'Ikke opsat' : tokValid ? 'Forbundet' : 'Opsat – forbinder ved næste backup'}</div></div></div>
+    <label class="lbl">Google Client ID</label>
+    <div class="row"><input class="grow" id="cidInput" value="${esc(cid)}" placeholder="xxxx.apps.googleusercontent.com"><button class="btn small" data-act="save-cid">Gem</button></div>
+    <details style="margin-top:8px"><summary>Sådan får du et Client ID (ca. 5 min)</summary><ol class="guide">
+      <li>Gå til <code>console.cloud.google.com</code> og opret et projekt, fx "Tid".</li>
+      <li><b>APIs &amp; Services → Library</b>: søg "Google Drive API" og tryk <b>Enable</b>.</li>
+      <li><b>OAuth consent screen</b>: vælg External, udfyld appnavn og din e-mail, og tilføj din egen Gmail som <b>Test user</b>. Lad appen blive i "Testing".</li>
+      <li><b>Credentials → Create credentials → OAuth client ID</b>, type <b>Web application</b>.</li>
+      <li>Authorized JavaScript origins: <code>${esc(origin)}</code></li>
+      <li>Authorized redirect URIs: <code>${esc(redirect)}</code></li>
+      <li>Kopiér Client ID og indsæt det ovenfor.</li>
+    </ol><p class="sub">Appen får kun adgang til de filer, den selv opretter i dit Drive (scope <code>drive.file</code>) – ikke resten af dit Drive.</p></details>
+    <p class="sub" style="margin-top:10px">Seneste backup: ${last ? fmtTime(last) : 'aldrig'}. Der tages automatisk backup højst én gang i døgnet, når du åbner appen.</p>
+    <button class="btn primary" data-act="drive-backup">Tag backup nu</button>
+    <button class="btn" data-act="drive-restore">Gendan fra Google Drive</button>
+    <label class="lbl">Som fil</label>
+    <button class="btn" data-act="export">Eksportér krypteret fil</button>
+    <button class="btn" data-act="import">Gendan fra fil</button>
+    <p class="sub">Fra delingsarket kan filen også gemmes direkte i Google Drive via "Gem i Arkiver".</p></div>`;
+
+  h += `<h2>Påmindelser</h2><div class="card">
+    <p>Appen kan ikke selv sende notifikationer uden en server, så brug iPhonens <b>Påmindelser</b>-app:</p>
+    <ol class="guide">
+      <li>Ny påmindelse: <b>"Noget værd at gemme fra i dag? (Tid)"</b> – kl. 20:30, Gentag: <b>Dagligt</b>.</li>
+      <li>Ny påmindelse: <b>"Søndagsrefleksion (Tid)"</b> – søndag kl. 19:30, Gentag: <b>Ugentligt</b>.</li>
+    </ol>
+    <p class="sub">Åbner du Tid om aftenen uden et øjeblik i dag, står "Noget værd at gemme" øverst. Søndag eftermiddag og aften står refleksionen øverst.</p></div>`;
+
+  h += `<h2>Om</h2><div class="card"><p class="sub">Tid ${VERSION}. Dine data ligger kun på denne telefon. Det eneste, der forlader den, er din krypterede backup til Google Drive. Ingen analyse, ingen tredjeparter.</p></div>`;
+  return h;
+}
+
+/* ---------------- Capture ---------------- */
+let C = null;
+function openCapture(m, pre) {
+  C = m ? { ...m, people: new Set(m.people), note: m.note || '', photoBlob: null, removePhoto: false }
+        : { id: null, people: new Set(pre?.people || []), category: (pre?.category && catOf(pre.category)?.active) ? pre.category : null, presence: null,
+            note: pre?.note || '', ideaId: pre?.ideaId, date: today(), photoId: null, photoBlob: null, removePhoto: false };
+  renderCapture();
+}
+function renderCapture() {
+  const act = activePeople();
+  const hasPartner = [...C.people].some(id => person(id)?.kind === 'partner');
+  const cats = S.cats.filter(c => c.active && (!c.partnerOnly || hasPartner));
+  if (C.category && !cats.find(c => c.id === C.category)) C.category = null;
+  const allOn = act.length > 1 && act.every(p => C.people.has(p.id));
+  const valid = C.people.size && C.category && C.presence;
+  const photoSrc = C.photoBlob ? URL.createObjectURL(C.photoBlob) : '';
+  const scroll = $('#sheet').scrollTop;
+  openSheet(`<h3>${C.id ? 'Redigér øjeblik' : 'Nyt øjeblik'}</h3>
+    <span class="lbl">Hvem</span>
+    <div class="chips">${act.map(p => `<button class="chip ${C.people.has(p.id) ? 'on' : ''}" data-act="cap-person" data-id="${p.id}"><span class="dot" style="background:${esc(p.color)}"></span>${esc(p.name)}</button>`).join('')}
+      ${act.length > 1 ? `<button class="chip ${allOn ? 'on' : ''}" data-act="cap-all">Alle</button>` : ''}</div>
+    <span class="lbl">Hvad</span>
+    <div class="chips">${cats.map(c => `<button class="chip ${C.category === c.id ? 'on' : ''}" data-act="cap-cat" data-id="${c.id}">${esc(c.emoji)} ${esc(c.label)}</button>`).join('')}</div>
+    <span class="lbl">Hvor til stede var du?</span>
+    <div class="pres">${[1, 2, 3].map(n => `<button class="${C.presence === n ? 'on' : ''}" data-act="cap-pres" data-n="${n}"><b>${n}</b>${PRES[n]}</button>`).join('')}</div>
+    <button class="btn primary" style="margin-top:18px" data-act="cap-save" ${valid ? '' : 'disabled'}>Gem</button>
+    <span class="lbl">Valgfrit</span>
+    <textarea maxlength="280" placeholder="En sætning om øjeblikket…" data-ch="cap-note">${esc(C.note)}</textarea>
+    <div class="row" style="margin-top:8px">
+      <button class="btn small" data-act="cap-photo">📷 ${C.photoBlob || (C.photoId && !C.removePhoto) ? 'Skift foto' : 'Tilføj foto'}</button>
+      ${C.photoBlob || (C.photoId && !C.removePhoto) ? `<button class="btn small ghost" data-act="cap-photo-remove">Fjern</button>` : ''}
+      <input type="date" class="grow" value="${C.date}" max="${today()}" data-ch="cap-date">
+    </div>
+    ${photoSrc ? `<img class="photoPrev" src="${photoSrc}" alt="">` : (C.photoId && !C.removePhoto ? `<img class="photoPrev" data-photo="${C.photoId}" alt="">` : '')}
+    ${C.id ? `<button class="btn ghost" style="margin-top:16px" data-act="cap-delete">Slet øjeblik</button>` : ''}`);
+  $('#sheet').scrollTop = scroll;
+}
+async function compress(file) {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = url; });
+    const s = Math.min(1, 1600 / Math.max(img.naturalWidth, img.naturalHeight));
+    const c = document.createElement('canvas');
+    c.width = Math.round(img.naturalWidth * s); c.height = Math.round(img.naturalHeight * s);
+    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+    return await new Promise(r => c.toBlob(r, 'image/jpeg', 0.7));
+  } finally { URL.revokeObjectURL(url); }
+}
+async function saveCapture() {
+  let photoId = C.removePhoto ? null : C.photoId;
+  if (C.photoId && (C.removePhoto || C.photoBlob)) { await del('photos', C.photoId); photoURLs.delete(C.photoId); photoId = null; }
+  if (C.photoBlob) { photoId = uid(); await put('photos', { id: photoId, type: 'image/jpeg', buf: await C.photoBlob.arrayBuffer() }); }
+  const m = { id: C.id || uid(), createdAt: C.createdAt || Date.now(), date: C.date || today(), people: [...C.people], category: C.category, presence: C.presence };
+  m.oneOnOne = m.people.length === 1;
+  if (C.note.trim()) m.note = C.note.trim();
+  if (photoId) m.photoId = photoId;
+  if (C.ideaId) m.ideaId = C.ideaId;
+  const editing = !!C.id;
+  await put('moments', m);
+  await loadAll(); closeSheet(); await render();
+  toast(editing ? 'Opdateret' : 'Gemt');
+}
+async function deleteMoment(id) {
+  const m = S.moments.find(x => x.id === id); if (!m) return;
+  const ph = m.photoId ? await get('photos', m.photoId) : null;
+  await del('moments', id); if (ph) await del('photos', ph.id);
+  await loadAll(); closeSheet(); await render();
+  toast('Øjeblik slettet', 'Fortryd', async () => { await put('moments', m); if (ph) await put('photos', ph); await loadAll(); render(); });
+}
+
+/* ---------------- Weekly review ---------------- */
+let R = null;
+function openReview(wk) {
+  const ex = reviewOf(wk);
+  const mon = (() => { const [y, w] = wk.split('-W').map(Number); const j4 = new Date(y, 0, 4, 12); const m = new Date(j4); m.setDate(j4.getDate() - ((j4.getDay() + 6) % 7) + (w - 1) * 7); return ds(m); })();
+  const days = [mon, addDays(mon, 6)];
+  const ms = S.moments.filter(m => m.date >= days[0] && m.date <= days[1]);
+  const kids = children(); const p = partner();
+  const pre = {};
+  for (const k of kids) pre[k.id] = ms.some(m => m.people.length === 1 && m.people[0] === k.id);
+  R = {
+    wk, ms, step: 0,
+    d: ex ? JSON.parse(JSON.stringify(ex)) : { isoWeek: wk, oneOnOneCheck: pre, noticed: {}, thanksPartner: '', saidIt: false, intention: '' },
+    steps: [...(kids.length ? ['oneonone'] : []), ...activePeople().map(x => 'noticed:' + x.id), ...(p ? ['thanks'] : []), 'intention', 'summary']
+  };
+  R.d.oneOnOneCheck = R.d.oneOnOneCheck || {};
+  for (const k of kids) if (!(k.id in R.d.oneOnOneCheck)) R.d.oneOnOneCheck[k.id] = pre[k.id];
+  R.d.noticed = R.d.noticed || {};
+  renderReview();
+}
+function collectReview() {
+  const s = R.steps[R.step]; const sh = $('#sheet');
+  if (s.startsWith('noticed:')) R.d.noticed[s.slice(8)] = sh.querySelector('textarea')?.value || '';
+  if (s === 'thanks') { R.d.thanksPartner = sh.querySelector('textarea')?.value || ''; R.d.saidIt = !!sh.querySelector('#saidIt')?.checked; }
+  if (s === 'oneonone') sh.querySelectorAll('[data-kid]').forEach(i => R.d.oneOnOneCheck[i.dataset.kid] = i.checked);
+  if (s === 'intention') R.d.intention = sh.querySelector('input')?.value || '';
+}
+function renderReview() {
+  const s = R.steps[R.step]; const last = R.step === R.steps.length - 1;
+  let body = '';
+  if (s === 'oneonone') {
+    body = `<h3>Alenetid</h3><p class="sub">Fik hvert barn tid alene med dig i denne uge?</p>` +
+      children().map(k => { const n = R.ms.filter(m => m.people.length === 1 && m.people[0] === k.id).length;
+        return `<div class="listrow"><span class="dot" style="background:${esc(k.color)}"></span><div class="grow"><b>${esc(k.name)}</b><div class="sub">${n} ${n === 1 ? 'øjeblik' : 'øjeblikke'} alene registreret</div></div>
+        <label class="switch"><input type="checkbox" data-kid="${k.id}" ${R.d.oneOnOneCheck[k.id] ? 'checked' : ''}><span></span></label></div>`; }).join('');
+  } else if (s.startsWith('noticed:')) {
+    const p = person(s.slice(8));
+    const notes = R.ms.filter(m => m.people.includes(p.id) && m.note).slice(0, 5);
+    body = `<h3>Hvad lagde du mærke til ved ${esc(p.name)} i denne uge?</h3>
+      ${notes.length ? `<p class="sub">Fra ugens øjeblikke:</p>${notes.map(m => `<div class="quote sub">${esc(m.note)}</div>`).join('')}` : ''}
+      <textarea placeholder="Noget nyt, noget sjovt, noget der gjorde indtryk…">${esc(R.d.noticed[p.id] || '')}</textarea>`;
+  } else if (s === 'thanks') {
+    const p = partner();
+    body = `<h3>Hvad gjorde ${esc(p.name)}, som du vil takke for?</h3>
+      <textarea placeholder="Stort eller småt…">${esc(R.d.thanksPartner)}</textarea>
+      <div class="listrow" style="margin-top:8px"><div class="grow">Jeg har sagt det til hende</div><label class="switch"><input type="checkbox" id="saidIt" ${R.d.saidIt ? 'checked' : ''}><span></span></label></div>
+      <p class="sub">Har du ikke endnu, så er i aften et godt tidspunkt.</p>`;
+  } else if (s === 'intention') {
+    body = `<h3>Én lille intention for næste uge</h3><p class="sub">Noget konkret og lille, du kan tage med ind i søndagsplanlægningen.</p>
+      <input value="${esc(R.d.intention)}" placeholder="fx 20 minutter alene med den mindste lørdag morgen">`;
+  } else {
+    const d = R.d;
+    body = `<h3>Uge ${wkNum(R.wk)}</h3>
+      ${children().map(k => `<p><span class="dot" style="background:${esc(k.color)}"></span><b>${esc(k.name)}</b> · alenetid: ${d.oneOnOneCheck[k.id] ? 'ja' : 'ikke i denne uge'}</p>`).join('')}
+      ${activePeople().filter(p => d.noticed[p.id]).map(p => `<p class="sub" style="margin-top:12px">${esc(p.name)}</p><div class="quote">${esc(d.noticed[p.id])}</div>`).join('')}
+      ${d.thanksPartner ? `<p class="sub" style="margin-top:12px">Tak til ${esc(partner()?.name || '')}${d.saidIt ? ' · sagt' : ' · ikke sagt endnu'}</p><div class="quote">${esc(d.thanksPartner)}</div>` : ''}
+      ${d.intention ? `<p class="sub" style="margin-top:12px">Intention for næste uge</p><div class="quote">${esc(d.intention)}</div>` : ''}`;
+  }
+  openSheet(`<div class="steps">${R.steps.map((_, i) => `<i class="${i <= R.step ? 'on' : ''}"></i>`).join('')}</div>${body}
+    <div class="row" style="margin-top:16px">${R.step ? `<button class="btn" data-act="rv-back">Tilbage</button>` : `<button class="btn ghost" data-act="close-sheet">Luk</button>`}
+    <button class="btn primary" data-act="${last ? 'rv-save' : 'rv-next'}">${last ? 'Gem refleksion' : 'Næste'}</button></div>`);
+}
+async function saveReview() { R.d.completedAt = Date.now(); await put('reviews', R.d); await loadAll(); closeSheet(); await render(); toast('Refleksion gemt'); }
+
+/* ---------------- Lock (PIN + Face ID) ---------------- */
+async function hashPin(pin, salt) {
+  const k = await crypto.subtle.importKey('raw', new TextEncoder().encode(pin), 'PBKDF2', false, ['deriveBits']);
+  return b64(await crypto.subtle.deriveBits({ name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' }, k, 256));
+}
+async function faceAvailable() {
+  try { return !!(window.PublicKeyCredential && await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()); } catch { return false; }
+}
+async function enableFace() {
+  try {
+    const cred = await navigator.credentials.create({ publicKey: {
+      challenge: crypto.getRandomValues(new Uint8Array(32)),
+      rp: { name: 'Tid' },
+      user: { id: crypto.getRandomValues(new Uint8Array(16)), name: 'tid', displayName: 'Tid' },
+      pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
+      authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required', residentKey: 'discouraged' },
+      timeout: 60000 } });
+    await setKV('faceId', b64(cred.rawId)); toast('Face ID slået til'); return true;
+  } catch (e) { toast('Face ID blev ikke slået til'); return false; }
+}
+async function faceUnlock() {
+  const id = await getKV('faceId'); if (!id) return;
+  try {
+    await navigator.credentials.get({ publicKey: { challenge: crypto.getRandomValues(new Uint8Array(32)), allowCredentials: [{ type: 'public-key', id: unb64(id) }], userVerification: 'required', timeout: 60000 } });
+    unlocked();
+  } catch { L.msg = 'Face ID mislykkedes – brug koden'; renderLock(); }
+}
+const L = { mode: 'unlock', entry: '', first: '', msg: '', fails: 0, until: 0 };
+function showLock(mode) {
+  Object.assign(L, { mode, entry: '', first: '', msg: '' });
+  if (mode === 'unlock') { S.unlocked = false; closeSheet(); $('#modalWrap').classList.add('hidden'); $('#fab').classList.add('hidden'); }
+  $('#lock').classList.remove('hidden'); renderLock();
+}
+async function renderLock() {
+  const pin = await getKV('pin'); const face = await getKV('faceId');
+  const t = { unlock: ['Tid', 'Indtast din kode'], setup1: ['Vælg en kode', '4–6 cifre. Bruges hver gang du åbner appen.'], setup2: ['Gentag koden', 'Indtast den samme kode igen'] }[L.mode];
+  const n = L.mode === 'unlock' ? pin.len : L.mode === 'setup2' ? L.first.length : Math.max(4, L.entry.length);
+  const leftKey = L.mode === 'unlock' && face ? `<button class="blank" data-k="face">Face ID</button>`
+    : L.mode === 'setup1' ? `<button class="blank" data-k="next" ${L.entry.length < 4 ? 'style="opacity:.3"' : ''}>Videre</button>` : `<button class="blank" disabled></button>`;
+  $('#lock').innerHTML = `<h1>${t[0]}</h1><div class="sub">${t[1]}</div>
+    <div class="pinDots">${[...Array(n)].map((_, i) => `<i class="${i < L.entry.length ? 'on' : ''}"></i>`).join('')}</div>
+    <div class="msg">${esc(L.msg)}</div>
+    <div class="keypad">${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(d => `<button data-k="${d}">${d}</button>`).join('')}${leftKey}<button data-k="0">0</button><button class="blank" data-k="del">⌫</button></div>
+    ${L.mode !== 'unlock' && S.unlocked ? `<button class="btn ghost" style="max-width:260px;margin-top:20px" data-k="cancel">Annullér</button>` : ''}`;
+}
+async function lockKey(k) {
+  if (k === 'cancel') { $('#lock').classList.add('hidden'); return; }
+  if (k === 'face') return faceUnlock();
+  if (L.mode === 'unlock' && Date.now() < L.until) { L.msg = 'Vent lidt…'; return renderLock(); }
+  if (k === 'del') { L.entry = L.entry.slice(0, -1); return renderLock(); }
+  if (k === 'next') { if (L.entry.length >= 4) Object.assign(L, { first: L.entry, entry: '', mode: 'setup2', msg: '' }); return renderLock(); }
+  if (L.entry.length >= 6) return;
+  L.entry += k; L.msg = '';
+  if (L.mode === 'unlock') {
+    const pin = await getKV('pin');
+    if (L.entry.length === pin.len) {
+      if (await hashPin(L.entry, unb64(pin.salt)) === pin.hash) { L.fails = 0; return unlocked(); }
+      L.entry = ''; L.fails++; L.msg = 'Forkert kode';
+      if (L.fails >= 5) { L.fails = 0; L.until = Date.now() + 30000; L.msg = 'For mange forsøg – vent 30 sekunder'; }
+    }
+  } else if (L.mode === 'setup1' && L.entry.length === 6) {
+    Object.assign(L, { first: L.entry, entry: '', mode: 'setup2' });
+  } else if (L.mode === 'setup2' && L.entry.length === L.first.length) {
+    if (L.entry === L.first) {
+      const salt = crypto.getRandomValues(new Uint8Array(16));
+      await setKV('pin', { salt: b64(salt), hash: await hashPin(L.entry, salt), len: L.entry.length });
+      if (S.unlocked) { $('#lock').classList.add('hidden'); toast('Kode ændret'); return; }
+      $('#lock').classList.add('hidden');
+      if (await faceAvailable() && await confirmBox('Brug Face ID?', 'Så kan du låse Tid op med Face ID. Koden virker stadig som reserve.', 'Slå til')) await enableFace();
+      if (!S.people.length) await askPeople();
+      return unlocked();
+    }
+    Object.assign(L, { entry: '', first: '', mode: 'setup1', msg: 'Koderne var ikke ens – prøv igen' });
+  }
+  renderLock();
+}
+async function unlocked() {
+  S.unlocked = true; $('#lock').classList.add('hidden');
+  await render();
+  const p = S.pending.splice(0); for (const f of p) await f();
+  autoBackup();
+}
+let hiddenAt = 0;
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) hiddenAt = Date.now();
+  else if (S.unlocked && hiddenAt && Date.now() - hiddenAt > 120000) showLock('unlock');
+  else if (S.unlocked) render(); // refresh banners (e.g. new day)
+});
+
+/* ---------------- Encryption ---------------- */
+async function deriveKey(pass, salt) {
+  const k = await crypto.subtle.importKey('raw', new TextEncoder().encode(pass), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: ITER, hash: 'SHA-256' }, k, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+}
+async function backupKey() { if (S.keyMem) return S.keyMem; try { return await getKV('bkKey'); } catch { return null; } }
+async function storeKey(key, salt) {
+  S.keyMem = key;
+  await setKV('bkSalt', b64(salt));
+  try { await setKV('bkKey', key); } catch { /* browser can't persist CryptoKey: keep in memory for this session */ }
+}
+async function setPassphrase() {
+  const v = await modal({ title: 'Backup-kodeord', text: 'Krypterer din backup. Det gemmes ikke i klartekst og kan ikke genskabes – gem det i din adgangskodeadministrator.',
+    fields: [{ name: 'p1', type: 'password', placeholder: 'Kodeord (mindst 10 tegn)' }, { name: 'p2', type: 'password', placeholder: 'Gentag kodeord' }], ok: 'Gem' });
+  if (!v) return;
+  if (v.p1.length < 10) return toast('Kodeordet skal være mindst 10 tegn');
+  if (v.p1 !== v.p2) return toast('Kodeordene var ikke ens');
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  await storeKey(await deriveKey(v.p1, salt), salt);
+  toast('Backup-kodeord gemt'); await render();
+  if (await getKV('driveClientId')) driveBackup(false);
+}
+async function snapshot() {
+  const photos = await all('photos');
+  return { app: 'tid', v: 1, exportedAt: new Date().toISOString(), people: S.people, categories: S.cats, moments: S.moments, reviews: S.reviews, ideas: S.ideas,
+    photos: photos.map(p => ({ id: p.id, type: p.type, b64: b64(p.buf) })) };
+}
+async function encryptSnapshot(key) {
+  const salt = await getKV('bkSalt');
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, new TextEncoder().encode(JSON.stringify(await snapshot())));
+  return JSON.stringify({ app: 'tid', v: 1, kdf: 'PBKDF2-SHA256', iter: ITER, salt, iv: b64(iv), ct: b64(ct) });
+}
+async function decryptBackup(text) {
+  let env; try { env = JSON.parse(text); } catch { throw new Error('Filen er ikke en Tid-backup'); }
+  if (env.app !== 'tid' || !env.ct) throw new Error('Filen er ikke en Tid-backup');
+  const v = await modal({ title: 'Backup-kodeord', text: 'Indtast kodeordet, backuppen blev krypteret med.', fields: [{ name: 'p', type: 'password', placeholder: 'Kodeord' }], ok: 'Lås op' });
+  if (!v) return null;
+  const salt = unb64(env.salt);
+  const key = await deriveKey(v.p, salt);
+  let pt;
+  try { pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(env.iv) }, key, unb64(env.ct)); }
+  catch { throw new Error('Forkert kodeord eller beskadiget fil'); }
+  return { obj: JSON.parse(new TextDecoder().decode(pt)), key, salt };
+}
+async function restoreFrom(res) {
+  if (!res) return;
+  const { obj, key, salt } = res;
+  const n = obj.moments?.length || 0;
+  if (!await confirmBox('Gendan backup?', `Backuppen fra ${fmtTime(obj.exportedAt)} indeholder ${n} øjeblikke. Den erstatter alt på denne telefon.`, 'Gendan')) return;
+  for (const s of ['people', 'categories', 'moments', 'reviews', 'photos']) await clear(s);
+  for (const p of obj.people || []) await put('people', p);
+  for (const c of obj.categories || []) await put('categories', c);
+  for (const m of obj.moments || []) await put('moments', m);
+  for (const r of obj.reviews || []) await put('reviews', r);
+  for (const p of obj.photos || []) await put('photos', { id: p.id, type: p.type, buf: unb64(p.b64).buffer });
+  if (obj.ideas) await setKV('ideas', obj.ideas);
+  photoURLs.clear();
+  await storeKey(key, salt);
+  await loadAll(); await render(); toast('Backup gendannet');
+}
+
+/* ---------------- Google Drive ---------------- */
+const redirectUri = () => location.origin + location.pathname;
+async function driveConnect(after) {
+  const cid = await getKV('driveClientId');
+  if (!cid) { toast('Indsæt først dit Google Client ID under Indstillinger'); S.tab = 'settings'; return render(); }
+  const state = uid();
+  localStorage.setItem('tid_oauth_state', state);
+  localStorage.setItem('tid_oauth_after', after || '');
+  location.href = 'https://accounts.google.com/o/oauth2/v2/auth?' + new URLSearchParams({
+    client_id: cid, redirect_uri: redirectUri(), response_type: 'token', scope: DRIVE_SCOPE, include_granted_scopes: 'true', state });
+}
+async function handleOAuthReturn() {
+  if (!/access_token=|error=/.test(location.hash)) return;
+  const h = new URLSearchParams(location.hash.slice(1));
+  history.replaceState(null, '', location.pathname);
+  const st = localStorage.getItem('tid_oauth_state'); localStorage.removeItem('tid_oauth_state');
+  const after = localStorage.getItem('tid_oauth_after'); localStorage.removeItem('tid_oauth_after');
+  if (h.get('error')) return S.pending.push(() => toast('Google Drive: ' + h.get('error')));
+  if (!st || h.get('state') !== st) return S.pending.push(() => toast('Google-login afvist (sikkerhedstjek fejlede)'));
+  await setKV('driveToken', { t: h.get('access_token'), exp: Date.now() + (Number(h.get('expires_in') || 3600) - 60) * 1000 });
+  if (after === 'backup') S.pending.push(() => driveBackup(false));
+  else if (after === 'restore') S.pending.push(() => driveRestore());
+  else S.pending.push(() => toast('Google Drive forbundet'));
+}
+async function driveToken() { const t = await getKV('driveToken'); return t && t.exp > Date.now() ? t.t : null; }
+const authErr = () => Object.assign(new Error('auth'), { auth: true });
+async function gfetch(url, opt = {}) {
+  const t = await driveToken(); if (!t) throw authErr();
+  const r = await fetch(url, { ...opt, headers: { ...(opt.headers || {}), Authorization: 'Bearer ' + t } });
+  if (r.status === 401) { await setKV('driveToken', null); throw authErr(); }
+  return r;
+}
+async function driveFindId() {
+  let id = await getKV('driveFileId'); if (id) return id;
+  const q = encodeURIComponent(`name='${BK_NAME}' and trashed=false`);
+  const r = await gfetch(`https://www.googleapis.com/drive/v3/files?q=${q}&orderBy=modifiedTime%20desc&fields=files(id,modifiedTime)&spaces=drive`);
+  if (!r.ok) throw new Error('Drive ' + r.status);
+  id = (await r.json()).files?.[0]?.id || null;
+  if (id) await setKV('driveFileId', id);
+  return id;
+}
+let backupBusy = false;
+async function driveBackup(silent) {
+  if (backupBusy) return; backupBusy = true;
+  try {
+    const key = await backupKey();
+    if (!key) { if (!silent) { toast('Vælg først et backup-kodeord'); setPassphrase(); } return; }
+    if (!await getKV('driveClientId')) { if (!silent) driveConnect('backup'); return; }
+    if (!await driveToken()) { if (silent) { S.backupPending = true; render(); } else driveConnect('backup'); return; }
+    if (!silent) toast('Tager backup…');
+    const body = await encryptSnapshot(key);
+    let id = await driveFindId(); let r;
+    if (id) {
+      r = await gfetch(`https://www.googleapis.com/upload/drive/v3/files/${id}?uploadType=media`, { method: 'PATCH', headers: { 'Content-Type': 'application/octet-stream' }, body });
+      if (r.status === 404) { await setKV('driveFileId', null); id = null; }
+    }
+    if (!id) {
+      const b = 'tid' + uid().replace(/-/g, '');
+      const meta = JSON.stringify({ name: BK_NAME, mimeType: 'application/octet-stream', description: 'Krypteret backup fra Tid' });
+      const mp = `--${b}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${meta}\r\n--${b}\r\nContent-Type: application/octet-stream\r\n\r\n${body}\r\n--${b}--`;
+      r = await gfetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id', { method: 'POST', headers: { 'Content-Type': 'multipart/related; boundary=' + b }, body: mp });
+      if (r.ok) await setKV('driveFileId', (await r.json()).id);
+    }
+    if (!r.ok) throw new Error('Drive svarede ' + r.status);
+    await setKV('lastBackup', Date.now()); S.backupPending = false;
+    if (!silent) toast('Backup gemt i Google Drive');
+    render();
+  } catch (e) {
+    if (e.auth) { if (silent) { S.backupPending = true; render(); } else driveConnect('backup'); }
+    else if (!silent) toast('Backup fejlede: ' + e.message);
+  } finally { backupBusy = false; }
+}
+async function driveRestore() {
+  try {
+    if (!await driveToken()) return driveConnect('restore');
+    const id = await driveFindId();
+    if (!id) return toast('Ingen backup fundet i Google Drive');
+    const r = await gfetch(`https://www.googleapis.com/drive/v3/files/${id}?alt=media`);
+    if (!r.ok) throw new Error('Drive svarede ' + r.status);
+    await restoreFrom(await decryptBackup(await r.text()));
+  } catch (e) { if (e.auth) driveConnect('restore'); else toast(e.message); }
+}
+async function autoBackup() {
+  if (!(await backupKey()) || !(await getKV('driveClientId'))) return;
+  const last = await getKV('lastBackup');
+  if (last && Date.now() - last < 864e5) return;
+  driveBackup(true);
+}
+async function exportFile() {
+  const key = await backupKey(); if (!key) { toast('Vælg først et backup-kodeord'); return setPassphrase(); }
+  const name = `Tid-backup-${today()}.tid`;
+  const file = new File([await encryptSnapshot(key)], name, { type: 'application/octet-stream' });
+  if (navigator.canShare && navigator.canShare({ files: [file] })) { try { await navigator.share({ files: [file], title: name }); } catch {} }
+  else { const a = document.createElement('a'); a.href = URL.createObjectURL(file); a.download = name; a.click(); }
+}
+
+/* ---------------- Events ---------------- */
+document.addEventListener('click', async e => {
+  const k = e.target.closest('#lock [data-k]'); if (k) return lockKey(k.dataset.k);
+  const el = e.target.closest('[data-act]'); if (!el) return;
+  const a = el.dataset.act, id = el.dataset.id;
+  switch (a) {
+    case 'tab': S.tab = el.dataset.tab; if (S.tab === 'week') S.weekOffset = 0; window.scrollTo(0, 0); return render();
+    case 'capture': return openCapture();
+    case 'edit': return openCapture(S.moments.find(m => m.id === id));
+    case 'close-sheet': return closeSheet();
+    case 'cap-person': C.people.has(id) ? C.people.delete(id) : C.people.add(id); return renderCapture();
+    case 'cap-all': { const act = activePeople(); const on = act.every(p => C.people.has(p.id)); C.people = new Set(on ? [] : act.map(p => p.id)); return renderCapture(); }
+    case 'cap-cat': C.category = id; return renderCapture();
+    case 'cap-pres': C.presence = Number(el.dataset.n); return renderCapture();
+    case 'cap-photo': return $('#photoInput').click();
+    case 'cap-photo-remove': C.photoBlob = null; C.removePhoto = true; return renderCapture();
+    case 'cap-save': return saveCapture();
+    case 'cap-delete': return deleteMoment(C.id);
+    case 'week-prev': S.weekOffset--; return render();
+    case 'week-next': if (S.weekOffset < 0) S.weekOffset++; return render();
+    case 'review': return openReview(el.dataset.wk || isoWeek(today()));
+    case 'rv-next': collectReview(); R.step++; return renderReview();
+    case 'rv-back': collectReview(); R.step--; return renderReview();
+    case 'rv-save': return saveReview();
+    case 'go-backup': S.tab = 'settings'; await render(); document.querySelectorAll('h2')[3]?.scrollIntoView({ behavior: 'smooth' }); return;
+    case 'drive-backup': return driveBackup(false);
+    case 'drive-restore': return driveRestore();
+    case 'set-pass': return setPassphrase();
+    case 'save-cid': { const v = $('#cidInput').value.trim(); await setKV('driveClientId', v || null); toast(v ? 'Client ID gemt' : 'Client ID fjernet'); return render(); }
+    case 'export': return exportFile();
+    case 'import': return $('#importInput').click();
+    case 'change-pin': return showLock('setup1');
+    case 'snak-person': S.snakPerson = id; return render();
+    case 'snak-new': { const p = person(S.snakPerson); const i = pickIdea(p, 'starter', currentStarter(p)?.id); if (i) S.snakCur[p.id] = i.id; return render(); }
+    case 'snak-show': S.snakCur[S.snakPerson] = el.dataset.idea; window.scrollTo(0, 0); return render();
+    case 'snak-fav': { const f = S.ideas.fav, x = el.dataset.idea; S.ideas.fav = f.includes(x) ? f.filter(y => y !== x) : [...f, x]; await saveIdeas(); return render(); }
+    case 'snak-used': {
+      const i = ideaOf(el.dataset.idea); S.ideas.used[i.id] = Date.now(); await saveIdeas();
+      return openCapture(null, { people: [S.snakPerson], category: 'snak', note: i.text, ideaId: i.id });
+    }
+    case 'ch-new': {
+      const p = person(S.snakPerson); const wk = isoWeek(today()); const cur = S.ideas.week[wk]?.[p.id];
+      const i = pickIdea(p, 'challenge', cur?.id); if (i) { S.ideas.week[wk][p.id] = { id: i.id, done: false }; await saveIdeas(); }
+      return render();
+    }
+    case 'ch-done': {
+      const p = person(S.snakPerson); const w = S.ideas.week[isoWeek(today())][p.id];
+      w.done = true; S.ideas.used[w.id] = Date.now(); await saveIdeas(); await render();
+      return openCapture(null, { people: [p.id], note: 'Udfordring: ' + ideaOf(w.id).text, ideaId: w.id });
+    }
+    case 'add-custom': {
+      const p = person(S.snakPerson); const type = el.dataset.type;
+      const v = await modal({ title: type === 'starter' ? 'Eget spørgsmål' : 'Egen udfordring', fields: [{ name: 't', placeholder: type === 'starter' ? 'Hvad vil du spørge om?' : 'Hvad vil du gøre?' }], ok: 'Tilføj' });
+      if (v?.t.trim()) { S.ideas.custom.push({ id: 'c' + uid(), type, for: p.kind === 'partner' ? 'partner' : 'child', age: 0, text: v.t.trim() }); await saveIdeas(); render(); }
+      return;
+    }
+    case 'del-custom': S.ideas.custom = S.ideas.custom.filter(i => i.id !== el.dataset.idea); await saveIdeas(); return render();
+    case 'add-person': {
+      const v = await modal({ title: 'Ny person', fields: [{ name: 'n', placeholder: 'Navn' }], ok: 'Tilføj' });
+      if (v?.n.trim()) { await put('people', { id: uid(), name: v.n.trim(), kind: 'child', color: '#8bd5ca', active: true, order: S.people.length }); await loadAll(); render(); }
+      return;
+    }
+    case 'add-cat': {
+      const v = await modal({ title: 'Ny kategori', fields: [{ name: 'e', placeholder: 'Emoji, fx 🎨' }, { name: 'l', placeholder: 'Navn, fx Tegne' }], ok: 'Tilføj' });
+      if (v?.l.trim()) { await put('categories', { id: uid(), emoji: v.e.trim() || '•', label: v.l.trim(), active: true, order: S.cats.length }); await loadAll(); render(); }
+      return;
+    }
+  }
+});
+document.addEventListener('input', e => {
+  const t = e.target;
+  if (t.dataset.ch === 'cap-note' && C) C.note = t.value;
+});
+document.addEventListener('change', async e => {
+  const t = e.target, ch = t.dataset.ch, id = t.dataset.id;
+  if (!ch) return;
+  if (ch === 'cap-date' && C) { C.date = t.value || today(); return; }
+  if (ch.startsWith('person-')) {
+    const p = { ...person(id) };
+    if (ch === 'person-name') p.name = t.value.trim() || p.name;
+    if (ch === 'person-color') p.color = t.value;
+    if (ch === 'person-kind') p.kind = t.value;
+    if (ch === 'person-active') p.active = t.checked;
+    if (ch === 'person-year') { const y = Number(t.value); p.birthYear = y > 1900 && y <= new Date().getFullYear() ? y : undefined; }
+    await put('people', p); await loadAll();
+    if (ch === 'person-kind') render();
+    return;
+  }
+  if (ch.startsWith('cat-')) {
+    const c = { ...catOf(id) };
+    if (ch === 'cat-emoji') c.emoji = t.value.trim() || c.emoji;
+    if (ch === 'cat-label') c.label = t.value.trim() || c.label;
+    if (ch === 'cat-active') c.active = t.checked;
+    await put('categories', c); await loadAll(); return;
+  }
+  if (ch === 'faceid') { if (t.checked) { if (!await enableFace()) t.checked = false; } else { await setKV('faceId', null); toast('Face ID slået fra'); } }
+});
+$('#photoInput').addEventListener('change', async e => {
+  const f = e.target.files[0]; e.target.value = '';
+  if (!f || !C) return;
+  try { C.photoBlob = await compress(f); C.removePhoto = false; renderCapture(); } catch { toast('Kunne ikke læse billedet'); }
+});
+$('#importInput').addEventListener('change', async e => {
+  const f = e.target.files[0]; e.target.value = '';
+  if (!f) return;
+  try { await restoreFrom(await decryptBackup(await f.text())); } catch (err) { toast(err.message); }
+});
+
+/* ---------------- Start ---------------- */
+(async function init() {
+  db = await openDB();
+  await handleOAuthReturn();
+  if (!(await getKV('seeded'))) await seed();
+  await loadAll();
+  const qp = new URLSearchParams(location.search);
+  if (qp.has('capture')) S.pending.push(() => openCapture());
+  if (qp.has('review')) S.pending.push(() => openReview(isoWeek(today())));
+  if ([...qp.keys()].length) history.replaceState(null, '', location.pathname);
+  showLock((await getKV('pin')) ? 'unlock' : 'setup1');
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+})();
+</script>
+</body>
+</html>
